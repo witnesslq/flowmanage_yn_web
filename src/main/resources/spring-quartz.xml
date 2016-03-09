@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+	
+	<bean id="findApQuality_JobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="alertaction"></property>
+		<property name="targetMethod" value="findApQuality"/>   <!-- 要执行的方法名称 -->
+		<property name="concurrent" value="false"></property>
+	</bean>
+	<!-- ======================== 调度触发器 ======================== -->
+	<bean id="findApQuality_CronTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="findApQuality_JobDetail"></property>
+		<property name="cronExpression" value="0/30 * * * * ?"></property>
+	</bean>
+	
+	<!-- ======================== 调度工厂 ======================== -->
+	<bean id="SpringJobSchedulerFactoryBean"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
+		lazy-init="false" autowire="default">
+		<property name="triggers">
+			<list>
+ 				<ref bean="findApQuality_CronTriggerBean"/> 
+			</list>
+		</property>
+	</bean>
+
+</beans>

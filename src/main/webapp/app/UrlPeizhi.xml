@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urls>
+	<url name="CMNET拓扑" value="http://10.132.19.3:58085/nmsw/jsp/flexview/ytopo.jsp?topoId=newMap1349922871367_userAdd&amp;viewType=custom"/>
+	<url name="GPRS拓扑" value="http://10.132.19.3:58085/nmsw/jsp/flexview/ytopo.jsp?topoId=newMap1349943370954_userAdd&amp;viewType=custom"/>
+	<url name="性能监控" value="http://10.132.19.6:8090/report/bizman/sxMonitoring/CmnetFramesetleft.jsp?iam=17362233"/>
+	<url name="部省上报" value="http://10.132.19.6:8090/report/bizman/sxMonitoring/yewuFramesetleft.jsp?iam=17362233"/>
+	<url name="组巡报表" value="http://10.132.19.6:8090/report/bizman/HealthSX/InitLayout.jsp?1=1"/>
+
+</urls>

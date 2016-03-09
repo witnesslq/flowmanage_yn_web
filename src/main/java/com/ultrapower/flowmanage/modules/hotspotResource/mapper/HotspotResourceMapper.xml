@@ -1,0 +1,999 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.hotspotResource.dao.mapper.HotspotResourceMapper">
+	
+	<!-- 根据视频类型、出口类型、流量类型查询出网视频流量排名(柱状图) -->
+	<select id="findExitNetVideoFlowRank" resultType="FsChartVo">
+		<![CDATA[
+		    SELECT 
+		          T.WEBNAME LABEL,
+		          NVL(T.VAL,0) VALUE,
+		          NVL(T.PERC,0) LINEVALUE
+		      FROM 
+		          T_HOTSPOT_VIDEO_EXIT T
+		     WHERE
+		          T.VIDEO_TYPE = #{0}
+		       AND
+		          T.EXIT_TYPE = #{1}
+		       AND
+		          T.FLOW_TYPE = #{2}
+		       AND 
+		          T.COLLECTTIME >= #{3} 
+		       AND
+		          T.COLLECTTIME < #{4}
+		]]>
+	</select>
+	
+	<!-- 根据视频类型、出口类型、流量类型查询出网视频流量排名(柱状图)  天粒度 -->
+	<select id="findExitNetVideoFlowRankOfDay" resultType="FsChartVo">
+		<![CDATA[
+		    SELECT 
+		          T.WEBNAME LABEL,
+		          NVL(T.VAL,0) VALUE,
+		          NVL(T.PERC,0) LINEVALUE
+		      FROM 
+		          T_HOTSPOT_VIDEO_EXIT_DAY T
+		     WHERE
+		          T.VIDEO_TYPE = #{0}
+		       AND
+		          T.EXIT_TYPE = #{1}
+		       AND
+		          T.FLOW_TYPE = #{2}
+		       AND 
+		          T.COLLECTTIME >= #{3} 
+		       AND
+		          T.COLLECTTIME < #{4}
+		]]>
+	</select>
+	
+	<!-- 根据视频类型和出口类型查询出网视频流量排名 -->
+	<resultMap type="java.util.HashMap" id="hotspotVideoExit">
+		<result property="webName" column="WEBNAME"/>
+		<result property="flowType" column="FLOW_TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+	</resultMap>
+	<select id="findHotspotVideoExitByVideoExitType" resultMap="hotspotVideoExit">
+		<![CDATA[
+	       SELECT
+		        WEBNAME,
+		        FLOW_TYPE,
+		        NVL(VAL,0) VAL,
+		        NVL(PERC,0) PERC
+		    FROM
+		        T_HOTSPOT_VIDEO_EXIT T
+		   WHERE
+		        T.VIDEO_TYPE = #{0}
+		     AND
+		        T.EXIT_TYPE = #{1}
+		     AND
+		        T.COLLECTTIME >= #{2} 
+		     AND
+		        T.COLLECTTIME < #{3}
+		     ORDER BY WEBNAME
+		]]>
+	</select>
+	
+	<!-- 根据视频类型和出口类型查询出网视频流量排名 天粒度 -->
+	
+	<select id="findHotspotVideoExitByVideoExitTypeOfDay" resultMap="hotspotVideoExit">
+		<![CDATA[
+	       SELECT
+		        WEBNAME,
+		        FLOW_TYPE,
+		        NVL(VAL,0) VAL,
+		        NVL(PERC,0) PERC
+		    FROM
+		        T_HOTSPOT_VIDEO_EXIT_DAY T
+		   WHERE
+		        T.VIDEO_TYPE = #{0}
+		     AND
+		        T.EXIT_TYPE = #{1}
+		     AND
+		        T.COLLECTTIME >= #{2} 
+		     AND
+		        T.COLLECTTIME < #{3}
+		     ORDER BY WEBNAME
+		]]>
+	</select>
+	
+	
+	<!-- 根据资源类型查询省内IDC对外提供资源列表记录数 -->
+	<select id="findIDCResRowCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			       COUNT(T.WEBNAME) ROWCOUNT
+			  FROM 
+			       T_HOTSPOT_IDC_RES T 
+			 WHERE 
+			       T.RES_TYPE = #{0}
+			    AND
+			       T.COLLECTTIME >= #{1} 
+			    AND
+			       T.COLLECTTIME < #{2}
+		]]>
+	</select>
+	
+	<!-- 根据资源类型查询省内IDC对外提供资源列表记录数  天粒度-->
+	<select id="findIDCResRowCountOfDay" resultType="int">
+		<![CDATA[
+			SELECT 
+			       COUNT(T.WEBNAME) ROWCOUNT
+			  FROM 
+			       T_HOTSPOT_IDC_RES_DAY T 
+			 WHERE 
+			       T.RES_TYPE = #{0}
+			    AND
+			       T.COLLECTTIME >= #{1} 
+			    AND
+			       T.COLLECTTIME < #{2}
+		]]>
+	</select>
+	
+	<!-- 根据资源类型、当前页、每页的记录数分页查询省内IDC对外提供资源列表 -->
+	<resultMap type="java.util.HashMap" id="idcRes">
+		<result property="number" column="NUMBER"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="accVal" column="ACC_VAL"/>
+		<result property="flowVal" column="FLOW_VAL"/>
+	</resultMap>
+	<select id="findIDCResTable" resultMap="idcRes">
+		<![CDATA[
+			 SELECT 
+			        Q.* 
+			   FROM (SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT 
+			                      T.WEBNAME,
+			                      NVL(T.ACC_VAL,0) ACC_VAL,
+			                      NVL(T.FLOW_VAL,0) FLOW_VAL
+			                  FROM 
+			                      T_HOTSPOT_IDC_RES T 
+			                 WHERE 
+			                      T.RES_TYPE = #{0}
+			                   AND
+			                      T.COLLECTTIME >= #{1} 
+			                   AND
+			                      T.COLLECTTIME < #{2}
+			                ) S
+			         ) Q
+			    WHERE
+			    	 Q."NUMBER" > (#{3}-1)*#{4}
+				  AND
+			         Q."NUMBER" <= #{3}*#{4}
+			         
+		]]>
+	</select>
+	
+	<!-- 根据资源类型、当前页、每页的记录数分页查询省内IDC对外提供资源列表 天粒度-->
+	
+	<select id="findIDCResTableOfDay" resultMap="idcRes">
+		<![CDATA[
+			 SELECT 
+			        Q.* 
+			   FROM (SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT 
+			                      T.WEBNAME,
+			                      NVL(T.ACC_VAL,0) ACC_VAL,
+			                      NVL(T.FLOW_VAL,0) FLOW_VAL
+			                  FROM 
+			                      T_HOTSPOT_IDC_RES_DAY T 
+			                 WHERE 
+			                      T.RES_TYPE = #{0}
+			                   AND
+			                      T.COLLECTTIME >= #{1} 
+			                   AND
+			                      T.COLLECTTIME < #{2}
+			                ) S
+			         ) Q
+			    WHERE
+			    	 Q."NUMBER" > (#{3}-1)*#{4}
+				  AND
+			         Q."NUMBER" <= #{3}*#{4}
+			         
+		]]>
+	</select>
+	
+	<!-- 查询省内热点网站情况 -->
+	<resultMap type="java.util.HashMap" id="hotspotWeb">
+		<result property="number" column="NUMBER"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="webType" column="WEBTYPE"/>
+		<result property="flowPercCM" column="FLOW_PERC_CM"/>
+		<result property="flowPercCRC" column="FLOW_PERC_CRC"/>
+		<result property="flowPercOUT" column="FLOW_PERC_OUT"/>
+		<result property="bwRate" column="BW_RATE"/>
+	</resultMap>
+	<select id="findHotspotWebTable" resultMap="hotspotWeb">
+		<![CDATA[
+		      SELECT
+			        ROWNUM "NUMBER",
+			        WEB.*
+			    FROM(
+			        SELECT
+			              T.WEBNAME,
+			              T.WEBTYPE,
+			              NVL(T.FLOW_PERC_CM,0) FLOW_PERC_CM,
+			              NVL(T.FLOW_PERC_CRC,0) FLOW_PERC_CRC,
+			              NVL(T.FLOW_PERC_OUT,0) FLOW_PERC_OUT,
+			              NVL(T.BW_RATE,0) BW_RATE,
+			              NVL(HITS,0) HITS
+			          FROM
+			              T_HOTSPOT_WEB T
+			         WHERE
+			              T.COLLECTTIME >= #{0} 
+			           AND
+			              T.COLLECTTIME < #{1}
+			           ORDER BY T.HITS DESC
+			         ) WEB
+		]]>
+	</select>
+	
+	
+	<!-- 查询省内热点网站情况 天粒度-->
+	
+	<select id="findHotspotWebTableOfDay" resultMap="hotspotWeb">
+		<![CDATA[
+		      SELECT
+			        ROWNUM "NUMBER",
+			        WEB.*
+			    FROM(
+			        SELECT
+			              T.WEBNAME,
+			              T.WEBTYPE,
+			              NVL(T.FLOW_PERC_CM,0) FLOW_PERC_CM,
+			              NVL(T.FLOW_PERC_CRC,0) FLOW_PERC_CRC,
+			              NVL(T.FLOW_PERC_OUT,0) FLOW_PERC_OUT,
+			              NVL(T.BW_RATE,0) BW_RATE,
+			              NVL(HITS,0) HITS
+			          FROM
+			              T_HOTSPOT_WEB_DAY T
+			         WHERE
+			              T.COLLECTTIME >= #{0} 
+			           AND
+			              T.COLLECTTIME < #{1}
+			           ORDER BY T.HITS DESC
+			         ) WEB
+		]]>
+	</select>
+	
+	<!-- 查询省内热点P2P下载/P2P视频情况 -->
+	<resultMap type="java.util.HashMap" id="hotspotP2P">
+		<result property="p2pType" column="P2PTYPE"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="flowVal" column="FLOW_VAL"/>
+		<result property="flowValCM" column="FLOW_VAL_CM"/>
+		<result property="flowValCRC" column="FLOW_VAL_CRC"/>
+		<result property="flowPercCM" column="FLOW_PERC_CM"/>
+		<result property="flowPercCRC" column="FLOW_PERC_CRC"/>
+		<result property="flowPercOUT" column="FLOW_PERC_OUT"/>
+		<result property="bwRate" column="BW_RATE"/>
+	</resultMap>
+	<select id="findHotspotP2PTable" resultMap="hotspotP2P">
+		<![CDATA[
+		    SELECT 
+		          T.P2PTYPE,
+		          T.WEBNAME,
+		          NVL(T.FLOW_VAL,0) FLOW_VAL,
+		          NVL(T.FLOW_VAL_CM,0) FLOW_VAL_CM,
+		          NVL(T.FLOW_VAL_CRC,0) FLOW_VAL_CRC,
+		          NVL(T.FLOW_PERC_CM,0) FLOW_PERC_CM,
+		          NVL(T.FLOW_PERC_CRC,0) FLOW_PERC_CRC,
+		          NVL(T.FLOW_PERC_OUT,0) FLOW_PERC_OUT,
+		          NVL(T.BW_RATE,0) BW_RATE        
+		      FROM
+		          T_HOTSPOT_P2P T
+		     WHERE
+		          T.COLLECTTIME >= #{0}
+		       AND
+		          T.COLLECTTIME < #{1}
+		       ORDER BY T.P2PTYPE,T.FLOW_VAL DESC
+		]]>
+	</select>
+	
+	
+	<!-- 查询省内热点P2P下载/P2P视频情况 天粒度 -->
+	
+	<select id="findHotspotP2PTableOfDay" resultMap="hotspotP2P">
+		<![CDATA[
+		    SELECT 
+		          T.P2PTYPE,
+		          T.WEBNAME,
+		          NVL(T.FLOW_VAL,0) FLOW_VAL,
+		          NVL(T.FLOW_VAL_CM,0) FLOW_VAL_CM,
+		          NVL(T.FLOW_VAL_CRC,0) FLOW_VAL_CRC,
+		          NVL(T.FLOW_PERC_CM,0) FLOW_PERC_CM,
+		          NVL(T.FLOW_PERC_CRC,0) FLOW_PERC_CRC,
+		          NVL(T.FLOW_PERC_OUT,0) FLOW_PERC_OUT,
+		          NVL(T.BW_RATE,0) BW_RATE        
+		      FROM
+		          T_HOTSPOT_P2P_DAY T
+		     WHERE
+		          T.COLLECTTIME >= #{0}
+		       AND
+		          T.COLLECTTIME < #{1}
+		       ORDER BY T.P2PTYPE,T.FLOW_VAL DESC
+		]]>
+	</select>
+	
+	
+	<!-- 查询流量TOP10000网站列表记录数 -->
+	<select id="findHotspotFlow50RowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_FLOW50 T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 10000
+		]]>
+	</select>
+	
+	<!-- 查询流量TOP10000网站列表记录数 天粒度 -->
+	<select id="findHotspotFlow50RowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_FLOW50_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 10000
+		]]>
+	</select>
+	
+	<!-- 分页查询流量TOP10000网站列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotFlow50">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="flowVal" column="FLOW_VAL"/>
+	</resultMap>
+	<select id="findHotspotFlow50Table" resultMap="hotspotFlow50">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.FLOW_VAL,0) FLOW_VAL
+			                 FROM
+			                     T_HOTSPOT_FLOW50 T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_VAL DESC
+			                ) S
+			           WHERE ROWNUM <= 10000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页查询流量TOP10000网站列表   天粒度-->
+	<select id="findHotspotFlow50TableOfDay" resultMap="hotspotFlow50">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.FLOW_VAL,0) FLOW_VAL
+			                 FROM
+			                     T_HOTSPOT_FLOW50_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_VAL DESC
+			                ) S
+			           WHERE ROWNUM <= 10000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 查询访问TOP10000网站列表记录数 -->
+	<select id="findHotspotAcc50RowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_ACC50 T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 10000
+		]]>
+	</select>
+	
+	
+	<!-- 查询访问TOP10000网站列表记录数  天粒度 -->
+	<select id="findHotspotAcc50RowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_ACC50_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 10000
+		]]>
+	</select>
+	
+	<!-- 分页访问TOP10000网站列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotAcc50">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="accVal" column="ACC_VAL"/>
+	</resultMap>
+	<select id="findHotspotAcc50Table" resultMap="hotspotAcc50">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.ACC_VAL,0) ACC_VAL
+			                 FROM
+			                     T_HOTSPOT_ACC50 T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.ACC_VAL DESC
+			                ) S
+			            WHERE ROWNUM <= 10000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页访问TOP10000网站列表 天粒度 -->
+	<select id="findHotspotAcc50TableOfDay" resultMap="hotspotAcc50">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.ACC_VAL,0) ACC_VAL
+			                 FROM
+			                     T_HOTSPOT_ACC50_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.ACC_VAL DESC
+			                ) S
+			            WHERE ROWNUM <= 10000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 查询网内流量占比小于70%网站列表记录数 -->
+	<select id="findHotspotPer70RowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_PER70 T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	
+	<!-- 查询网内流量占比小于70%网站列表记录数  天粒度-->
+	<select id="findHotspotPer70RowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_PER70_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	<!-- 分页查询网内流量占比小于70%网站列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotPer70">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="flowVal" column="FLOW_VAL"/>
+		<result property="flowPerc" column="FLOW_PERC"/>
+	</resultMap>
+	<select id="findHotspotPer70Table" resultMap="hotspotPer70">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.FLOW_VAL,0) FLOW_VAL,
+                     			 NVL(T.FLOW_PERC,0) FLOW_PERC
+			                 FROM
+			                     T_HOTSPOT_PER70 T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_VAL DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页查询网内流量占比小于70%网站列表  天粒度 -->
+	
+	<select id="findHotspotPer70TableOfDay" resultMap="hotspotPer70">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     NVL(T.FLOW_VAL,0) FLOW_VAL,
+                     			 NVL(T.FLOW_PERC,0) FLOW_PERC
+			                 FROM
+			                     T_HOTSPOT_PER70_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_VAL DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 查询TOP1000域名列表记录数 -->
+	<select id="findHotspotDNS1000RowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS1000 T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 1000
+		]]>
+	</select>
+	
+	<!-- 查询TOP1000域名列表记录数 天粒度-->
+	<select id="findHotspotDNS1000RowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS1000_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 1000
+		]]>
+	</select>
+	
+	<!-- 分页查询TOP1000域名列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotDNS1000">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="ipHitRate" column="NET_HITRATE"/>
+		<result property="dnsTimes" column="DNS_TIMES"/>
+		<result property="dnsRate" column="DNS_RATE"/>
+	</resultMap>
+	<select id="findHotspotDNS1000Table" resultMap="hotspotDNS1000">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS1000 T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			            WHERE ROWNUM <= 1000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页查询TOP1000域名列表 -->
+	
+	<select id="findHotspotDNS1000TableOfDay" resultMap="hotspotDNS1000">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS1000_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			            WHERE ROWNUM <= 1000
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 查询非移动引入域名列表记录数 -->
+	<select id="findHotspotDNSNOCMRowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS_NOCM T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	<!-- 查询非移动引入域名列表记录数  天粒度-->
+	<select id="findHotspotDNSNOCMRowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS_NOCM_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	<!-- 分页查询非移动引入域名列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotDNSNOCM">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="ipHitRate" column="NET_HITRATE"/>
+		<result property="dnsTimes" column="DNS_TIMES"/>
+		<result property="dnsRate" column="DNS_RATE"/>
+	</resultMap>
+	<select id="findHotspotDNSNOCMTable" resultMap="hotspotDNSNOCM">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS_NOCM T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页查询非移动引入域名列表  天粒度-->
+	
+	<select id="findHotspotDNSNOCMTableOfDay" resultMap="hotspotDNSNOCM">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS_NOCM_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	
+	
+	
+	<!-- 查询无线用户点击热点域名列表记录数 -->
+	<select id="findUserClickhotspotDomainsRowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS_NOCM T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 50
+		]]>
+	</select>
+	
+	<!-- 查询无线用户点击热点域名列表记录数  天粒度-->
+	<select id="findUserClickhotspotDomainsRowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_DNS_NOCM_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		     AND ROWNUM <= 50
+		]]>
+	</select>
+	
+	<!-- 分页查询无线用户点击热点域名列表 -->
+	<resultMap type="java.util.HashMap" id="userClickhotspotDomains">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="ipHitRate" column="NET_HITRATE"/>
+		<result property="dnsTimes" column="DNS_TIMES"/>
+		<result property="dnsRate" column="DNS_RATE"/>
+	</resultMap>
+	<select id="findUserClickhotspotDomainsTable" resultMap="userClickhotspotDomains">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS_NOCM T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			          WHERE ROWNUM <= 50
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	
+	<!-- 分页查询无线用户点击热点域名列表 天粒度 -->
+	
+	<select id="findUserClickhotspotDomainsTableOfDay" resultMap="userClickhotspotDomains">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.NET_HITRATE,
+			                     NVL(T.DNS_TIMES,0) DNS_TIMES,
+			                     NVL(T.DNS_RATE,0) DNS_RATE
+			                 FROM
+			                     T_HOTSPOT_DNS_NOCM_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.DNS_TIMES DESC
+			                ) S
+			          WHERE ROWNUM <= 50
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 查询热点资源引入分析列表记录数 -->
+	<select id="findHotspotResRowCount" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_RES T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	<!-- 查询热点资源引入分析列表记录数  天粒度-->
+	<select id="findHotspotResRowCountOfDay" resultType="int">
+		<![CDATA[
+		  SELECT 
+		        COUNT(T.DOMAIN_NAME) ROWCOUNT
+		    FROM
+		        T_HOTSPOT_RES_DAY T
+		   WHERE
+		        T.COLLECTTIME >= #{0}
+		     AND
+		        T.COLLECTTIME < #{1}
+		]]>
+	</select>
+	
+	<!-- 分页查询热点资源引入分析列表 -->
+	<resultMap type="java.util.HashMap" id="hotspotRes">
+		<result property="number" column="NUMBER"/>
+		<result property="domainName" column="DOMAIN_NAME"/>
+		<result property="ip" column="IP"/>
+		<result property="flowRank" column="FLOW_RANK"/>
+		<result property="accRank" column="ACC_RANK"/>
+		<result property="dnsTimes" column="DNS_TIMES"/>
+		<result property="flowPerc" column="FLOW_PERC"/>
+	</resultMap>
+	<select id="findHotspotResTable" resultMap="hotspotRes">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.IP,
+			                     T.FLOW_RANK,
+			                     T.ACC_RANK,
+			                     T.DNS_TIMES,
+			                     NVL(T.FLOW_PERC,0) FLOW_PERC
+			                 FROM
+			                     T_HOTSPOT_RES T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_RANK DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+	<!-- 分页查询热点资源引入分析列表 天粒度 -->
+	
+	<select id="findHotspotResTableOfDay" resultMap="hotspotRes">
+		<![CDATA[
+		      SELECT 
+			        Q.* 
+			    FROM(SELECT 
+			               ROWNUM "NUMBER",
+			               S.*
+			           FROM(SELECT
+			                     T.DOMAIN_NAME,
+			                     T.IP,
+			                     T.FLOW_RANK,
+			                     T.ACC_RANK,
+			                     T.DNS_TIMES,
+			                     NVL(T.FLOW_PERC,0) FLOW_PERC
+			                 FROM
+			                     T_HOTSPOT_RES_DAY T
+			                WHERE
+			                     T.COLLECTTIME >= #{0} 
+			                  AND
+			                     T.COLLECTTIME < #{1}
+			                  ORDER BY T.FLOW_RANK DESC
+			                ) S
+			         ) Q
+			    WHERE
+			         Q."NUMBER" > (#{2}-1)*#{3}
+			      AND
+			         Q."NUMBER" <= #{2}*#{3}
+		]]>
+	</select>
+	
+</mapper>
+

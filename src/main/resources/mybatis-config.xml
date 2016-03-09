@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="lazyLoadingEnabled" value="false" />
+	</settings>
+ 	<typeAliases>
+ 		<typeAlias alias="Emp" type="com.ultrapower.flowmanage.modules.health.vo.Emp"/>
+ 		<typeAlias alias="CountryContrastVo" type="com.ultrapower.flowmanage.modules.health.vo.CountryContrastVo"/>
+ 		<typeAlias alias="ThreeNetHealth" type="com.ultrapower.flowmanage.modules.health.vo.ThreeNetHealth"/>
+ 		<typeAlias alias="CityContrastVo" type="com.ultrapower.flowmanage.modules.health.vo.CityContrastVo"/>
+ 		<typeAlias alias="AssDimRelevance" type="com.ultrapower.flowmanage.modules.health.vo.AssDimRelevance"/>
+ 		<typeAlias alias="Tree" type="com.ultrapower.flowmanage.common.vo.Tree"/>
+ 		<typeAlias alias="FlowExitTree" type="com.ultrapower.flowmanage.common.vo.FlowExitTree"/>
+ 		<typeAlias alias="FsChartVo" type="com.ultrapower.flowmanage.modules.flow.vo.FsChartVo"/>
+ 		<typeAlias alias="FlowExitLinkVo" type="com.ultrapower.flowmanage.modules.flow.vo.FlowExitLinkVo"/>
+ 		<typeAlias alias="ThresholdConfigVo" type="com.ultrapower.flowmanage.modules.quality.vo.ThresholdConfigVo"/>
+ 	</typeAliases>
+ 	
+ 	<plugins>
+		<plugin interceptor="com.ultrapower.flowmanage.common.utils.PageUtil.PagePlugin">
+			<property name="dialect" value="oracle" />
+			<property name="pageSqlId" value=".*Page.*" />
+		</plugin>
+	</plugins>
+	
+	
+ 	<mappers>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/health/mapper/HealthMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/flow/mapper/FlowMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/quality/mapper/QualityMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/hotspotResource/mapper/HotspotResourceMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/internetResources/mapper/InternetResourcesMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/busiBenchmark/mapper/BusiBenchmarkMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/wlanLogAnalyse/mapper/WlanLogAnalyseMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/xdrAnalyse/mapper/XdrAnalyseMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/portVideoBiz/mapper/PortVideoBizMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/internetResAnalyse/mapper/InternetResAnalyseMapper.xml"/>
+ 		<mapper resource="com/ultrapower/flowmanage/modules/keyIndexSurvey/mapper/KeyIndexSurveyMapper.xml"/>
+ 	</mappers>
+ 	
+
+    
+</configuration>

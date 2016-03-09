@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.portVideoBiz.dao.mapper.PortVideoBizMapper">
+
+	<!-- 根据视图类型、时间粒度、时间查询业务、网络质量视图 -->
+	<resultMap type="java.util.HashMap" id="bizNetQualityViewByTime">
+		<result property="busiId" column="BUSIID"/>
+		<result property="busiName" column="BUSINAME"/>
+		<result property="score" column="SCORE" />
+		<result property="chainPerc" column="CHAIN_PERC"/>
+	</resultMap>
+	<select id="findBizNetQualityViewByTime" resultMap="bizNetQualityViewByTime">
+		SELECT 
+			 T.BUSIID, 
+			 T.BUSINAME, 
+			 NVL(T.SCORE,0) SCORE, 
+			 NVL(T.CHAIN_PERC,0) CHAIN_PERC
+		 FROM
+		 <if test="timeType == 'day'">
+		     T_VIDEOBIZ_BIZNETQUALITY_DAY T
+		 </if>
+		 <if test="timeType == 'week'">
+		     T_VIDEOBIZ_BIZNETQUALITY_WEEK T
+		 </if>
+		 <if test="timeType == 'month'">
+		     T_VIDEOBIZ_BIZNETQUALITY_MONTH T
+		 </if>
+		WHERE
+		     T.VIEWTYPE = #{viewType}
+		  <if test="timeType == 'day' || timeType == 'month'">
+		  AND T.COLLECTTIME &gt;= #{startTime}
+		  AND T.COLLECTTIME &lt; #{endTime}
+		  </if> 
+		  <if test="timeType == 'week'">
+		  AND T.START_TIME = #{startTime}
+		  AND T.END_TIME = #{endTime}
+		  </if>   
+	</select>
+	
+	<!-- 根据视图类型、时间粒度、时间查询业务、网络质量地市比对视图 -->
+	<resultMap type="java.util.HashMap" id="bizNetQualityCityContrastViewByTime">
+		<result property="id" column="ID"/>
+		<result property="city" column="CITY"/>
+		<result property="score" column="SCORE" />
+		<result property="grade" column="GRADE"/>
+	</resultMap>
+	<select id="findBizNetQualityCityContrastViewByTime" resultMap="bizNetQualityCityContrastViewByTime">
+		SELECT
+		      ROWNUM ID,
+		      A.*
+		  FROM
+			  (SELECT
+					 CTY.OBJECTNAME CITY,
+					 NVL(T.SCORE,0) SCORE,
+					 (CASE 
+					    WHEN NVL(T.SCORE,0) &lt; 20 THEN 1
+						WHEN NVL(T.SCORE,0) &gt;= 20 AND NVL(T.SCORE,0) &lt; 40 THEN 2
+						WHEN NVL(T.SCORE,0) &gt;= 40 AND NVL(T.SCORE,0) &lt; 60 THEN 3
+						WHEN NVL(T.SCORE,0) &gt;= 60 AND NVL(T.SCORE,0) &lt; 80 THEN 4
+						ELSE 5 END
+					 ) GRADE
+				FROM 
+					(SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+		  LEFT JOIN
+					(SELECT 
+					        V.CITYID,
+							V.SCORE 
+					   FROM 
+						 <if test="timeType == 'day'">
+						     T_VIDEOBIZ_BIZNETCITY_DAY V
+						 </if>
+						 <if test="timeType == 'week'">
+						     T_VIDEOBIZ_BIZNETCITY_WEEK V
+						 </if>
+						 <if test="timeType == 'month'">
+						     T_VIDEOBIZ_BIZNETCITY_MONTH V
+						 </if>
+				 		WHERE
+							 V.VIEWTYPE = #{viewType}
+						  <if test="timeType == 'day' || timeType == 'month'">
+						  AND V.COLLECTTIME &gt;= #{startTime}
+						  AND V.COLLECTTIME &lt; #{endTime}
+						  </if> 
+						  <if test="timeType == 'week'">
+						  AND V.START_TIME = #{startTime}
+						  AND V.END_TIME = #{endTime}
+						  </if>
+					  ) T
+				   ON CTY.OBJECTID = T.CITYID	
+			 ORDER BY T.SCORE DESC
+			  ) A   
+	</select>
+	
+	<!-- 根据视图类型、时间粒度、时间、品质度查询业务、网络质量视频网站TOP3排名 -->
+	<resultMap type="java.util.HashMap" id="bizNetQualityVideoWebTop3ByTime">
+		<result property="id" column="ID"/>
+		<result property="webName" column="WEBNAME"/>
+	</resultMap>
+	<select id="findBizNetQualityVideoWebTop3ByTime" resultMap="bizNetQualityVideoWebTop3ByTime">
+		SELECT
+		      B.*
+		 FROM
+			  (SELECT
+				     ROWNUM ID,
+					 A.*
+				FROM
+					  (SELECT
+							  T.WEBNAME
+						 FROM 
+						 <if test="timeType == 'day'">
+						     T_VIDEOBIZ_VIDEONETTOP3_DAY T
+						 </if>
+						 <if test="timeType == 'week'">
+						     T_VIDEOBIZ_VIDEONETTOP3_WEEK T
+						 </if>
+						 <if test="timeType == 'month'">
+						     T_VIDEOBIZ_VIDEONETTOP3_MONTH T
+						 </if>
+					    WHERE
+							  T.VIEWTYPE = #{viewType}
+						  <if test="timeType == 'day' || timeType == 'month'">
+						  AND T.COLLECTTIME &gt;= #{startTime}
+						  AND T.COLLECTTIME &lt; #{endTime}
+						  </if> 
+						  <if test="timeType == 'week'">
+						  AND T.START_TIME = #{startTime}
+						  AND T.END_TIME = #{endTime}
+						  </if>
+						  <if test="sort == 'desc'">
+						  ORDER BY T.SCORE DESC
+						  </if>
+						  <if test="sort == 'asc'">
+						  ORDER BY T.SCORE ASC
+						  </if>
+					  ) A
+				 ) B
+		WHERE B.ID &lt;= 3 
+	</select>
+	
+	<!-- 根据视图类型、时间粒度、地市ID、时间查询手机用户业务、网络质量微观呈现视图 -->
+	<resultMap type="java.util.HashMap" id="bizNetQCMicroViewByTime">
+		<result property="cityId" column="CITYID"/>
+		<result property="operator" column="OPERATOR"/>
+		<result property="webId" column="WEBID"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="score" column="SCORE"/>
+	</resultMap>
+	<select id="findBizNetQCMicroViewByTime" resultMap="bizNetQCMicroViewByTime">
+		SELECT
+			 T.CITYID,
+			 T.OPERATOR,
+			 T.WEBID,
+			 T.WEBNAME,
+			 NVL(T.SCORE,0) SCORE
+		FROM 
+		 <if test="timeType == 'day'">
+		     T_VIDEOBIZ_BIZNETMICRO_DAY T
+		 </if>
+		 <if test="timeType == 'week'">
+		     T_VIDEOBIZ_BIZNETMICRO_WEEK T
+		 </if>
+		 <if test="timeType == 'month'">
+		     T_VIDEOBIZ_BIZNETMICRO_MONTH T
+		 </if>
+		WHERE
+			 T.VIEWTYPE = #{viewType}
+		 AND
+		     T.CITYID = #{cityId}
+		  <if test="timeType == 'day' || timeType == 'month'">
+		  AND T.COLLECTTIME &gt;= #{startTime}
+		  AND T.COLLECTTIME &lt; #{endTime}
+		  </if> 
+		  <if test="timeType == 'week'">
+		  AND T.START_TIME = #{startTime}
+		  AND T.END_TIME = #{endTime}
+		  </if>
+		  ORDER BY T.SCORE DESC
+	</select>
+	
+	<!-- 根据时间粒度、地市ID、运营商、网站ID、时间查询当前(所有)视频网站各类型问题产生次数 -->
+	<resultMap type="java.util.HashMap" id="videoWebProblemNumberByTime">
+		<result property="kpiName" column="KPINAME"/>
+		<result property="definition" column="DEFINITION"/>
+		<result property="problemnumber" column="PROBLEMNUMBER"/>
+	</resultMap>
+	<select id="findVideoWebProblemNumberByTime" resultMap="videoWebProblemNumberByTime">
+		SELECT
+		      T.KPINAME,
+			  T.DEFINITION,
+		      SUM(NVL(T.PROBLEMNUMBER,0)) PROBLEMNUMBER
+		  FROM 
+		  	 <if test="timeType == 'day'">
+		     T_VIDEOBIZ_BIZSIDEPROBLEM_DAY T
+			 </if>
+			 <if test="timeType == 'week'">
+			 T_VIDEOBIZ_BIZSIDEPROBLEM_WEEK T
+			 </if>
+			 <if test="timeType == 'month'">
+			 T_VIDEOBIZ_BIZSIDEPROBLEM_MON T
+			 </if>
+		  WHERE
+		        T.CITYID = #{cityId}
+			AND
+			    T.OPERATOR = #{operator}
+		   <if test="webId != null and webId != ''">
+		    AND T.WEBID = #{webId}
+		   </if>
+		   <if test="timeType == 'day' || timeType == 'month'">
+		    AND T.COLLECTTIME &gt;= #{startTime}
+		    AND T.COLLECTTIME &lt; #{endTime}
+		   </if> 
+		   <if test="timeType == 'week'">
+		    AND T.START_TIME = #{startTime}
+		    AND T.END_TIME = #{endTime}
+		   </if>
+		   GROUP BY T.KPINAME,T.DEFINITION
+	</select>
+	
+	<!-- 根据时间粒度、时间查询质差网站列表及问题溯源分析 -->
+	<resultMap type="java.util.HashMap" id="netPoorQualityByTime">
+		<result property="webName" column="WEBNAME"/>
+		<result property="globalScore" column="GLOBAL_SCORE"/>
+		<result property="definition" column="DEFINITION"/>
+		<result property="score" column="SCORE"/>
+		<result property="pauseTimePerc" column="PAUSE_TIME_PERC"/>
+		<result property="pauseTimePerc30" column="PAUSE_TIME_PERC30"/>
+		<result property="downloadSpeed" column="DOWNLOAD_SPEED"/>
+		<result property="downloadSpeedPerc30" column="DOWNLOAD_SPEED_PERC30"/>
+		<result property="pauseNumberPerc" column="PAUSE_NUMBER_PERC"/>
+		<result property="pauseNumberPerc20" column="PAUSE_NUMBER_PERC20"/>
+		<result property="fpsTime" column="FPSTIME"/>
+		<result property="fpsTimePerc10" column="FPSTIME_PERC10"/>
+		<result property="connSucrate" column="CONN_SUCRATE"/>
+		<result property="connSucratePerc10" column="CONN_SUCRATE_PERC10"/>
+	</resultMap>
+	<select id="findNetPoorQualityByTime" resultMap="netPoorQualityByTime">
+		SELECT 
+		      DISTINCT
+		      T.WEBNAME,
+			  NVL(T.GLOBAL_SCORE,0) GLOBAL_SCORE,
+			  NVL(T.DEFINITION,0) DEFINITION,
+			  NVL(T.SCORE,0) SCORE,
+			  NVL(T.PAUSE_TIME_PERC,0) PAUSE_TIME_PERC,
+			  NVL(T.PAUSE_TIME_PERC30,0)  PAUSE_TIME_PERC30,
+			  NVL(T.DOWNLOAD_SPEED,0) DOWNLOAD_SPEED,
+			  NVL(T.DOWNLOAD_SPEED_PERC30,0) DOWNLOAD_SPEED_PERC30,
+			  NVL(T.PAUSE_NUMBER_PERC,0) PAUSE_NUMBER_PERC,
+			  NVL(T.PAUSE_NUMBER_PERC20,0) PAUSE_NUMBER_PERC20,
+			  NVL(T.FPSTIME,0) FPSTIME,
+			  NVL(T.FPSTIME_PERC10,0) FPSTIME_PERC10,
+			  NVL(T.CONN_SUCRATE,0) CONN_SUCRATE,
+			  NVL(T.CONN_SUCRATE_PERC10,0) CONN_SUCRATE_PERC10
+		 FROM 
+		 	 <if test="timeType == 'day'">
+		     T_VIDEOBIZ_NETPOORQU_DAY T 
+			 </if>
+			 <if test="timeType == 'week'">
+			 T_VIDEOBIZ_NETPOORQU_WEEK T 
+			 </if>
+			 <if test="timeType == 'month'">
+			 T_VIDEOBIZ_NETPOORQU_MONTH T 
+			 </if>
+		 WHERE 
+	         <if test="timeType == 'day' || timeType == 'month'">
+	         T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+	         </if> 
+	         <if test="timeType == 'week'">
+	         T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+	         </if>
+		 ORDER BY T.WEBNAME
+	</select>
+	
+	<!-- 根据时间粒度、时间查询业务质量图形分析 -->
+	<resultMap type="java.util.HashMap" id="bizQualityPaphByTime">
+		<result property="webName" column="WEBNAME"/>
+		<result property="belongAddr" column="BELONG_ADDR"/>
+		<result property="biqcScore" column="BIQU_SCORE"/>
+		<result property="biqcIdleScore" column="BIQU_IDLE_SCORE"/>
+		<result property="biqcBusyScore" column="BIQU_BUSY_SCORE"/>
+		<result property="clearqcIdleScore" column="CLEARQU_IDLE_SCORE"/>
+		<result property="clearqcHighScore" column="CLEARQU_HIGH_SCORE"/>
+		<result property="clearqcNormScore" column="CLEARQU_NORM_SCORE"/>
+		<result property="partqcGlobalScore" column="PARTQU_GLOBAL_SCORE"/>
+		<result property="partqcFlowWeight" column="PARTQU_FLOW_WEIGHT"/>
+		<result property="partqcScore" column="PARTQU_SCORE"/>
+	</resultMap>
+	<select id="findBizQualityPaphByTime" resultMap="bizQualityPaphByTime">
+		  SELECT 
+		         T.WEBNAME,
+				 T.BELONG_ADDR,
+				 NVL(T.BIQU_SCORE,0) BIQU_SCORE,
+				 NVL(T.BIQU_IDLE_SCORE,0) BIQU_IDLE_SCORE,
+				 NVL(T.BIQU_BUSY_SCORE,0) BIQU_BUSY_SCORE,
+				 NVL(T.CLEARQU_IDLE_SCORE,0) CLEARQU_IDLE_SCORE,
+				 NVL(T.CLEARQU_HIGH_SCORE,0) CLEARQU_HIGH_SCORE,
+				 NVL(T.CLEARQU_NORM_SCORE,0) CLEARQU_NORM_SCORE,
+				 NVL(T.PARTQU_GLOBAL_SCORE,0) PARTQU_GLOBAL_SCORE,
+				 NVL(T.PARTQU_FLOW_WEIGHT,0) PARTQU_FLOW_WEIGHT,
+				 NVL(T.PARTQU_SCORE,0) PARTQU_SCORE
+		   FROM
+		   		 <if test="timeType == 'day'">
+			     T_VIDEOBIZ_BIZQUGRAPH_DAY T
+				 </if>
+				 <if test="timeType == 'week'">
+				 T_VIDEOBIZ_BIZQUGRAPH_WEEK T
+				 </if>
+				 <if test="timeType == 'month'">
+				 T_VIDEOBIZ_BIZQUGRAPH_MONTH T
+				 </if>
+		  WHERE
+				 T.CITYID = #{cityId}
+			AND
+			     T.OPERATOR = #{operator}
+	        <if test="timeType == 'day' || timeType == 'month'">
+	        AND  T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+	        </if> 
+	        <if test="timeType == 'week'">
+	        AND  T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+	        </if>
+		  ORDER BY T.WEBNAME
+	</select>
+	
+	<!-- 根据时间粒度、时间查询网络质量问题统计 -->
+	<resultMap type="java.util.HashMap" id="netQualityProblemCountByTime">
+		<result property="kpiName" column="KPINAME"/>
+		<result property="operator" column="OPERATOR"/>
+		<result property="problemNumber" column="PROBLEM_NUMBER"/>
+		<result property="chain" column="CHAIN"/>
+	</resultMap>
+	<select id="findNetQualityProblemCountByTime" resultMap="netQualityProblemCountByTime">
+		SELECT 
+		      T.KPINAME,
+			  T.OPERATOR,
+			  NVL(T.PROBLEM_NUMBER,0) PROBLEM_NUMBER,
+			  NVL(T.CHAIN,0) CHAIN
+		 FROM 
+		 	  <if test="timeType == 'day'">
+		      T_VIDEOBIZ_NETQUCOUNT_DAY T
+			  </if>
+			  <if test="timeType == 'week'">
+			  T_VIDEOBIZ_NETQUCOUNT_WEEK T
+			  </if>
+			  <if test="timeType == 'month'">
+			  T_VIDEOBIZ_NETQUCOUNT_MONTH T
+			  </if>
+		WHERE
+		      <if test="timeType == 'day' || timeType == 'month'">
+		      T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+		      </if> 
+		      <if test="timeType == 'week'">
+              T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+		      </if>
+	</select>
+	
+	<!-- 根据时间粒度、城市ID、网站ID、时间查询网络质量微观呈现 -->
+	<resultMap type="java.util.HashMap" id="netQualityMicroByTime">
+		<result property="webName" column="WEBNAME"/>
+		<result property="belongAddr" column="BELONG_ADDR"/>
+		<result property="goalAddr" column="GOAL_ADDR"/>
+		<result property="globalScore" column="GLOBAL_SCORE"/>
+		<result property="netdelay" column="NETDELAY"/>
+		<result property="netdelayScore" column="NETDELAY_SCORE"/>
+		<result property="netshake" column="NETSHAKE"/>
+		<result property="netshakeScore" column="NETSHAKE_SCORE"/>
+		<result property="netpkloss" column="NETPKLOSS"/>
+		<result property="netpklossScore" column="NETPKLOSS_SCORE"/>
+	</resultMap>
+	<select id="findNetQualityMicroByTime" resultMap="netQualityMicroByTime">
+		SELECT
+			  T.WEBNAME,
+			  T.BELONG_ADDR,
+			  T.GOAL_ADDR,
+			  NVL(T.GLOBAL_SCORE,0) GLOBAL_SCORE,
+			  NVL(T.NETDELAY,0) NETDELAY,
+			  NVL(T.NETDELAY_SCORE,0) NETDELAY_SCORE,
+			  NVL(T.NETSHAKE,0) NETSHAKE,
+			  NVL(T.NETSHAKE_SCORE,0) NETSHAKE_SCORE,
+			  NVL(T.NETPKLOSS,0) NETPKLOSS,
+			  NVL(T.NETPKLOSS_SCORE,0) NETPKLOSS_SCORE
+		  FROM
+		  	  <if test="timeType == 'day'">
+		      T_VIDEOBIZ_NETQUMICRO_DAY T
+			  </if>
+			  <if test="timeType == 'week'">
+			  T_VIDEOBIZ_NETQUMICRO_WEEK T
+			  </if>
+			  <if test="timeType == 'month'">
+			  T_VIDEOBIZ_NETQUMICRO_MONTH T
+			  </if>
+		 WHERE
+		      T.CITYID = #{cityId}
+		   AND
+	          T.OPERATOR = #{operator}
+		   AND
+			  T.WEBID = #{webId}
+		   <if test="timeType == 'day' || timeType == 'month'">
+		   AND T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+		   </if> 
+		   <if test="timeType == 'week'">
+           AND T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+ 	       </if>
+		   ORDER BY T.BELONG_ADDR
+	</select>
+	
+	<!-- 查询端到端视频业务阀值 -->
+	<resultMap type="java.util.HashMap" id="netQualityThreshold">
+		<result property="busiName" column="BUSINAME"/>
+		<result property="kpiName" column="KPINAME"/>
+		<result property="value" column="VALUE"/>
+	</resultMap>
+	<select id="findNetQualityThreshold" resultMap="netQualityThreshold">
+		SELECT 
+		      T.BUSINAME,
+			  T.KPINAME,
+			  '('||T.MIN_VALUE||','||T.MAX_VALUE||')' VALUE
+		  FROM 
+			  T_VIDEOBIZ_THRESHOLD T
+	</select>
+
+	<!-- 根据视图类型、时间粒度、城市ID、运营商、时间查询网站质量差视频网站(网络侧问题分析Label) -->
+	<resultMap type="java.util.HashMap" id="netQualityPoorVideoByTime">
+		<result property="webId" column="WEBID"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="score" column="SCORE"/>
+	</resultMap>
+	<select id="findNetQualityPoorVideoByTime" resultMap="netQualityPoorVideoByTime">
+		SELECT 
+		      T.WEBID,
+			  T.WEBNAME,
+			  NVL(T.SCORE,0) SCORE
+		  FROM
+		  	  <if test="timeType == 'day'">
+		      T_VIDEOBIZ_BIZNETMICRO_DAY T
+			  </if>
+			  <if test="timeType == 'week'">
+			  T_VIDEOBIZ_BIZNETMICRO_WEEK T
+			  </if>
+			  <if test="timeType == 'month'">
+			  T_VIDEOBIZ_BIZNETMICRO_MONTH T
+			  </if>
+		 WHERE
+		      T.VIEWTYPE = #{viewType}
+		   AND
+		      T.CITYID = #{cityId}
+		   AND
+			  T.OPERATOR = #{operator}
+		   <if test="timeType == 'day' || timeType == 'month'">
+		   AND T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+		   </if> 
+		   <if test="timeType == 'week'">
+           AND T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+ 	       </if>
+		   AND
+			  T.SCORE &lt;= 70
+	</select>
+	
+	<!-- 根据时间粒度、城市ID、网站ID、运营商、时间查询局向质量分析 -->
+	<resultMap type="java.util.HashMap" id="partDirectionQualityByTime">
+		<result property="id" column="ID"/>
+		<result property="partquGlobalScore" column="PARTQU_GLOBAL_SCORE"/>
+		<result property="webId" column="WEBID"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="belongAddr" column="BELONG_ADDR"/>
+		<result property="partquFlowWeight" column="PARTQU_FLOW_WEIGHT"/>
+		<result property="partquScore" column="PARTQU_SCORE"/>
+	</resultMap>
+	<select id="findPartDirectionQualityByTime" resultMap="partDirectionQualityByTime">
+		SELECT 
+		      ROWNUM ID,
+		      NVL(T.PARTQU_GLOBAL_SCORE,0) PARTQU_GLOBAL_SCORE,
+			  T.WEBID,
+		      T.WEBNAME,
+		      T.BELONG_ADDR,
+		      NVL(T.PARTQU_FLOW_WEIGHT,0) PARTQU_FLOW_WEIGHT,
+		      NVL(T.PARTQU_SCORE,0) PARTQU_SCORE
+		  FROM
+		  	  <if test="timeType == 'day'">
+		      T_VIDEOBIZ_BIZQUGRAPH_DAY T
+			  </if>
+			  <if test="timeType == 'week'">
+			  T_VIDEOBIZ_BIZQUGRAPH_WEEK T
+			  </if>
+			  <if test="timeType == 'month'">
+			  T_VIDEOBIZ_BIZQUGRAPH_MONTH T
+			  </if>
+		WHERE
+		      T.CITYID = #{cityId}
+		  AND
+			  T.WEBID = #{webId}
+		  AND
+		      T.OPERATOR = #{operator}
+		  <if test="timeType == 'day' || timeType == 'month'">
+	   	  AND T.COLLECTTIME &gt;= #{startTime} AND T.COLLECTTIME &lt; #{endTime}
+	      </if> 
+		  <if test="timeType == 'week'">
+          AND T.START_TIME = #{startTime} AND T.END_TIME = #{endTime}
+ 	      </if>
+	</select>
+
+	
+</mapper>
+

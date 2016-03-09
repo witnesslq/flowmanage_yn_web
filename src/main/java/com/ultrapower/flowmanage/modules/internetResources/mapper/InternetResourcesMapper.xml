@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.internetResources.dao.mapper.InternetResourcesMapper">
+	
+	<!-- 查询TOP10网站域名总数统计 -->
+	<resultMap type="java.util.HashMap" id="top10WebDomainCount">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findTop10WebDomainCount" resultMap="top10WebDomainCount">
+		<![CDATA[
+			 SELECT
+			      Q.*
+			  FROM
+			    (SELECT
+			          ROWNUM "NUMBER",
+			          D.WEBNAME LABEL,
+			          D.DNSNUMBER VALUE
+			     FROM
+			        (SELECT
+			              T.WEBNAME,
+			              T.DNSNUMBER
+			         FROM
+			              ( SELECT WEBNAME, COUNT(DOMAIN_NAME) DNSNUMBER FROM T_NETRES_DNS40W GROUP BY WEBNAME ) T
+			         ORDER BY T.DNSNUMBER DESC
+			        ) D
+			     ) Q
+			WHERE Q."NUMBER" <= 10
+		]]>
+	</select>
+	
+	<!-- 查询其他网站域名总数统计 -->
+	<resultMap type="java.util.HashMap" id="otherWebDomainCount">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findOtherWebDomainCount" resultMap="otherWebDomainCount">
+		<![CDATA[
+			 SELECT
+			      Q.*
+			  FROM
+			    (SELECT
+			          ROWNUM "NUMBER",
+			          D.WEBNAME LABEL,
+			          D.DNSNUMBER VALUE
+			     FROM
+			        (SELECT
+			              T.WEBNAME,
+			              T.DNSNUMBER
+			         FROM
+			              ( SELECT WEBNAME, COUNT(DOMAIN_NAME) DNSNUMBER FROM T_NETRES_DNS40W GROUP BY WEBNAME ) T
+			         ORDER BY T.DNSNUMBER DESC
+			        ) D
+			     ) Q
+			WHERE  Q."NUMBER" > 10 and Q."NUMBER" <= 20
+		]]>
+	</select>
+	
+	<!-- 根据网站名称查询运营商分布统计情况 -->
+	<resultMap type="java.util.HashMap" id="operatorDistributionCountBywebName">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findOperatorDistributionCountBywebName" resultMap="operatorDistributionCountBywebName">
+		<![CDATA[
+			 SELECT
+			        ROWNUM "NUMBER",
+			        Q.*
+			   FROM
+				    (SELECT
+				          T.OPERATOR LABEL,
+				          T.DNSNUMBER VALUE
+				     FROM
+				          (SELECT OPERATOR,COUNT(DOMAIN_NAME) DNSNUMBER 
+				            FROM T_NETRES_DNS40W 
+				           WHERE 
+				           		WEBNAME = #{0} 
+				           	 AND
+                				OPERATOR IS NOT NULL
+				           GROUP BY OPERATOR
+				           ) T
+				     ORDER BY T.DNSNUMBER DESC
+				    ) Q
+		]]>
+	</select>
+	
+	<!-- 根据网站名称和运营商查询区域分布统计情况 -->
+	<resultMap type="java.util.HashMap" id="districtDistributionBywebNameOperator">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findDistrictDistributionBywebNameOperator" resultMap="districtDistributionBywebNameOperator">
+		<![CDATA[
+			SELECT
+			      Q.*
+			 FROM
+		     	(SELECT
+				        ROWNUM "NUMBER",
+				        D.*
+				   FROM
+					    (SELECT
+					          T.DISTRICT LABEL,
+					          T.DNSNUMBER VALUE
+					     FROM
+					          (SELECT DISTRICT,COUNT(DOMAIN_NAME) DNSNUMBER 
+					            FROM T_NETRES_DNS40W 
+					           WHERE 
+					           		WEBNAME = #{0} 
+					             AND 
+					             	OPERATOR = #{1} 
+					             AND
+					             	DISTRICT IS NOT NULL
+					        	GROUP BY DISTRICT
+					           ) T
+					     ORDER BY T.DNSNUMBER DESC
+					    ) D
+				  )  Q
+			WHERE Q."NUMBER" <= 10 
+		]]>
+	</select>
+	
+	
+	<!-- 根据网站名称和运营商查询运营商维度明细统计列表记录数 -->
+	<select id="findOperatorDetailBywebNameOperatorRowCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			      COUNT(WEBNAME) ROWCOUNT
+			  FROM 
+			      T_NETRES_DNS40W
+			 WHERE
+			      WEBNAME = #{0}
+			   AND
+			      OPERATOR = #{1}
+		]]>
+	</select>
+	
+	
+	<!-- 根据网站名称和运营商查询运营商维度明细统计列表 -->
+	<resultMap type="java.util.HashMap" id="operatorDetailBywebNameOperatorTable">
+		<result property="webName" column="WEBNAME" />
+		<result property="domainName" column="DOMAINNAME"/>
+		<result property="ip" column="IP" />
+		<result property="district" column="DISTRICT" />
+		<result property="belongAddress" column="BELONGADDRESS" />
+	</resultMap>
+	<select id="findOperatorDetailBywebNameOperatorTable" resultMap="operatorDetailBywebNameOperatorTable">
+		<![CDATA[
+			SELECT 
+			      Q.* 
+			  FROM
+			      (SELECT 
+			           ROWNUM "NUMBER",
+			           S.*
+			       FROM
+			           (SELECT 
+			                  WEBNAME,
+			                  DOMAIN_NAME DOMAINNAME,
+			                  IP,
+			                  DISTRICT,
+			                  BELONG_ADDRESS BELONGADDRESS
+			              FROM 
+			                  T_NETRES_DNS40W
+			             WHERE
+			                  WEBNAME = #{0}
+			               AND
+			                  OPERATOR = #{1}  
+			           ) S
+			      ) Q
+			 WHERE
+			      Q."NUMBER" > (#{2} - 1) * #{3}
+			   AND
+			      Q."NUMBER" <= #{2} * #{3}  
+		]]>
+	</select>
+	
+	
+	
+	
+	<!-- 根据网站名称和运营商、区域查询区域维度明细统计列表记录数 -->
+	<select id="findDistrictwebNameOperatorAreaRowCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			      COUNT(WEBNAME) ROWCOUNT
+			  FROM 
+			      T_NETRES_DNS40W
+			 WHERE
+			      WEBNAME = #{0}
+			   AND
+			      OPERATOR = #{1}
+			   AND
+                  DISTRICT = #{2}
+		]]>
+	</select>
+	
+	
+	<!-- 根据网站名称和运营商、区域查询区域维度明细统计列表 -->
+	<resultMap type="java.util.HashMap" id="districtwebNameOperatorAreaTable">
+		<result property="webName" column="WEBNAME" />
+		<result property="domainName" column="DOMAINNAME"/>
+		<result property="ip" column="IP" />
+		<result property="district" column="DISTRICT" />
+		<result property="belongAddress" column="BELONGADDRESS" />
+	</resultMap>
+	<select id="findDistrictwebNameOperatorAreaTable" resultMap="districtwebNameOperatorAreaTable">
+		<![CDATA[
+			SELECT 
+			      Q.* 
+			  FROM
+			      (SELECT 
+			           ROWNUM "NUMBER",
+			           S.*
+			       FROM
+			           (SELECT 
+			                  WEBNAME,
+			                  DOMAIN_NAME DOMAINNAME,
+			                  IP,
+			                  DISTRICT,
+			                  BELONG_ADDRESS BELONGADDRESS
+			              FROM 
+			                  T_NETRES_DNS40W
+			             WHERE
+			                  WEBNAME = #{0}
+			               AND
+			                  OPERATOR = #{1}  
+			               AND
+                  			  DISTRICT = #{2}
+			           ) S
+			      ) Q
+			 WHERE
+			      Q."NUMBER" > (#{3} - 1) * #{4}
+			   AND
+			      Q."NUMBER" <= #{3} * #{4}  
+		]]>
+	</select>
+	
+	
+	
+	<!-- 根据网站名称、域名、IP地址、归属区域查询域名库列表记录数 -->
+	<select id="findDomainLibraryRowCount" resultType="int">
+			SELECT 
+			      COUNT(WEBNAME) ROWCOUNT
+			  FROM 
+			      T_NETRES_DNS40W
+			 WHERE 1 = 1
+			 <if test="webName != null and webName != ''">
+			   AND WEBNAME LIKE '%'||#{webName}||'%'
+			 </if>
+			 <if test="domainName != null and domainName != ''">
+			   AND DOMAIN_NAME LIKE '%'||#{domainName}||'%' 
+			 </if>
+			 <if test="ip != null and ip != ''">
+			   AND IP LIKE '%'||#{ip}||'%'
+			 </if>
+			 <if test="district != null and district != ''">
+			   AND BELONG_ADDRESS LIKE '%'||#{district}||'%'  
+			 </if>
+	</select>
+	
+	<!-- 根据网站名称、域名、IP地址、归属区域查询域名库列表 -->
+	<resultMap type="java.util.HashMap" id="domainLibraryTable">
+		<result property="webName" column="WEBNAME" />
+		<result property="domainName" column="DOMAINNAME"/>
+		<result property="ip" column="IP" />
+		<result property="district" column="DISTRICT" />
+		<result property="belongAddress" column="BELONGADDRESS" />
+	</resultMap>
+	<select id="findDomainLibraryTable" resultMap="domainLibraryTable">
+			SELECT 
+			      Q.* 
+		     FROM
+			    (SELECT 
+			           ROWNUM "NUMBER",
+			           S.*
+			       FROM
+			           (SELECT 
+						      WEBNAME,
+			                  DOMAIN_NAME DOMAINNAME,
+			                  IP,
+			                  DISTRICT,
+			                  BELONG_ADDRESS BELONGADDRESS
+						  FROM 
+						      T_NETRES_DNS40W
+						 WHERE 1 = 1
+						 <if test="webName != null and webName != ''">
+						   AND WEBNAME LIKE '%'||#{webName}||'%'
+						 </if>
+						 <if test="domainName != null and domainName != ''">
+						   AND DOMAIN_NAME LIKE '%'||#{domainName}||'%' 
+						 </if>
+						 <if test="ip != null and ip != ''">
+						   AND IP LIKE '%'||#{ip}||'%'
+						 </if>
+						 <if test="district != null and district != ''">
+						   AND BELONG_ADDRESS LIKE '%'||#{district}||'%'  
+						 </if>
+					   ) S
+			    ) Q
+		   WHERE
+		        Q."NUMBER" > (#{pageNo} - 1) * #{pageSize}
+		     AND
+		        Q."NUMBER" &lt;= #{pageNo} * #{pageSize}    
+	</select>
+	
+	
+	<update id="deleteDomainRespository" >
+		DELETE FROM fm_domain_repository
+	</update>
+	
+	<update id="deleteNetResDns" >
+		DELETE FROM t_netres_dns40w
+	</update>
+	
+	<insert id="insertDomainRespository" parameterType="com.ultrapower.flowmanage.modules.internetResources.vo.FmDomainRepository">
+		INSERT INTO fm_domain_repository
+            (serial_num, website_name, domain_name, ip, attribution, imp_date)
+     	VALUES (seq_domain_resp.NEXTVAL - 1, #{websiteName}, #{domainName}, #{ip}, #{attribution}, #{impDate})
+	</insert>
+	
+	<select id="resetSeq" parameterType="java.util.Map" statementType="CALLABLE">
+		<![CDATA[
+		{call pro_reset_seq(#{seqname,mode=IN,jdbcType=VARCHAR})}
+		]]>
+	</select>
+	
+	<select id="getIpRange" resultType="com.ultrapower.flowmanage.modules.internetResources.vo.FmIpRange">
+		<![CDATA[
+			SELECT start_ip startIp, end_ip endIp, operator, area, imp_date impDate FROM fm_ip_range
+		]]>
+	</select>
+	
+	<insert id="insertNetResDns" parameterType="com.ultrapower.flowmanage.modules.internetResources.vo.NetResDns">
+		INSERT INTO t_netres_dns40w
+            (webname, domain_name, ip, district, operator, belong_address, bak)
+     	VALUES (#{websiteName}, #{domainName}, #{ip}, #{district}, #{operator}, #{belongAddress}, #{bak})
+	</insert>
+	
+	<select id="getKnowledgeKid" resultType="int">
+		<![CDATA[
+			SELECT seq_knowledge.NEXTVAL - 1 FROM DUAL
+		]]>
+	</select>
+	
+	<update id="deleteKnowledge" >
+		DELETE FROM fm_knowledge
+	</update>
+	
+	<update id="deleteNetResKnowledge" >
+		DELETE FROM t_netres_knowledge
+	</update>
+	
+	<update id="deleteNetResKnowledgeDetail" >
+		DELETE FROM t_netres_knowledge_detail
+	</update>
+	
+	<insert id="insertKnowledge" parameterType="com.ultrapower.flowmanage.modules.internetResources.vo.FmKnowledge">
+		INSERT INTO fm_knowledge
+            (ID, kname, ktype, VERSIONS, platforms, corporation, FUNCTION,
+             feature, usergroup, protocols, ports, port, HOST, effect, ip,
+             belong, imp_date)
+     VALUES (#{kid}, #{kname,jdbcType=VARCHAR}, #{ktype,jdbcType=VARCHAR}, #{versions,jdbcType=VARCHAR}, 
+     		 #{platforms,jdbcType=VARCHAR}, #{corporation,jdbcType=VARCHAR}, #{function,jdbcType=VARCHAR},
+             #{feature,jdbcType=VARCHAR}, #{usergroup,jdbcType=VARCHAR}, #{protocols,jdbcType=VARCHAR}, 
+             #{ports,jdbcType=VARCHAR}, #{port,jdbcType=VARCHAR}, #{host,jdbcType=VARCHAR}, #{effect,jdbcType=VARCHAR}, 
+             #{ip,jdbcType=VARCHAR}, #{belong,jdbcType=VARCHAR}, #{impDate,jdbcType=VARCHAR})
+	</insert>
+	
+	<insert id="insertNetResKnowledge" parameterType="com.ultrapower.flowmanage.modules.internetResources.vo.FmKnowledge">
+		INSERT INTO t_netres_knowledge
+            (kid, kname, ktype, VERSIONS, platforms, corporation, FUNCTION,
+             feature, usergroup, protocols, ports)
+     VALUES (#{kid}, #{kname,jdbcType=VARCHAR}, #{ktype,jdbcType=VARCHAR}, #{versions,jdbcType=VARCHAR}, 
+     		 #{platforms,jdbcType=VARCHAR}, #{corporation,jdbcType=VARCHAR}, #{function,jdbcType=VARCHAR},
+             #{feature,jdbcType=VARCHAR}, #{usergroup,jdbcType=VARCHAR}, #{protocols,jdbcType=VARCHAR}, 
+             #{ports,jdbcType=VARCHAR})
+	</insert>
+	
+	<insert id="insertNetResKnowledgeDetail" parameterType="com.ultrapower.flowmanage.modules.internetResources.vo.FmKnowledge">
+		INSERT INTO t_netres_knowledge_detail
+            (kid, port, HOST, effect, ip, belong)
+     VALUES (#{kid}, #{port,jdbcType=VARCHAR}, #{host,jdbcType=VARCHAR}, #{effect,jdbcType=VARCHAR}, 
+     		 #{ip,jdbcType=VARCHAR}, #{belong,jdbcType=VARCHAR})
+	</insert>
+	
+	
+	<!-- 查询业务总体统计 -->
+	<resultMap type="java.util.HashMap" id="businessTotalCount">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findBusinessTotalCount" resultMap="businessTotalCount">
+		<![CDATA[
+			  SELECT
+			        Q.*
+			    FROM
+				    (SELECT
+				          ROWNUM "NUMBER",
+				          D.KTYPE LABEL,
+				          D.KNAME VALUE
+				     FROM
+				        (SELECT
+				               T.KTYPE,
+				               T.KNAME
+				          FROM
+				               (SELECT KTYPE, COUNT(KNAME) KNAME FROM T_NETRES_KNOWLEDGE GROUP BY KTYPE) T
+				         ORDER BY T.KNAME DESC
+				        ) D
+				     ) Q
+			    WHERE Q."NUMBER" <= 20
+		]]>
+	</select>
+	
+	<!-- 根据业务大类名称查询业务明细统计 -->
+	<resultMap type="java.util.HashMap" id="businessDetailsCountByBizName">
+		<result property="number" column="NUMBER" javaType="string"/>
+		<result property="kid" column="KID" javaType="string"/>
+		<result property="label" column="LABEL"/>
+		<result property="value" column="VALUE" javaType="string"/>
+	</resultMap>
+	<select id="findBusinessDetailsCountByBizName" resultMap="businessDetailsCountByBizName">
+		<![CDATA[
+			SELECT
+			      Q.*
+			  FROM
+			    (SELECT
+			          ROWNUM "NUMBER",
+			          D.KID,
+			          D.KNAME LABEL,
+			          D.COUNT VALUE
+			     FROM
+			        (SELECT
+			               T.KID,
+			               T.KNAME,
+			               T.COUNT
+			          FROM
+			               (
+			                SELECT T1.KID,T1.KNAME, COUNT(T2.KID) COUNT
+			                  FROM T_NETRES_KNOWLEDGE T1,T_NETRES_KNOWLEDGE_DETAIL T2 
+			                 WHERE T1.KID = T2.KID(+) 
+			                   AND T1.KTYPE = #{0}
+			              GROUP BY T1.KID,T1.KNAME
+			               ) T
+			         ORDER BY T.COUNT DESC
+			        ) D
+			     ) Q
+			 WHERE Q."NUMBER" <= 20
+		]]>
+	</select>
+	
+	<!-- 根据业务ID查询业务基础信息 -->
+	<!-- <resultMap type="java.util.HashMap" id="businessTotalInfoByKid">
+		<result property="kname" column="KNAME" />
+		<result property="versions" column="VERSIONS" />
+		<result property="platforms" column="PLATFORMS"/>
+		<result property="corporation" column="CORPORATION" />
+		<result property="function" column="FUNCTION" />
+		<result property="feature" column="FEATURE" />
+		<result property="usergroup" column="USERGROUP" />
+	</resultMap> -->
+	<select id="findBusinessTotalInfoByKid" resultType="java.util.HashMap">
+		<![CDATA[
+			SELECT
+			      T.KNAME,
+			      T.VERSIONS,
+			      T.PLATFORMS,
+			      T.CORPORATION,
+			      T.FUNCTION,
+			      T.FEATURE,
+			      T.USERGROUP,
+      			  T.FLOWCHART
+			 FROM
+			     T_NETRES_KNOWLEDGE T
+			WHERE
+			     T.KID = #{0}
+		]]>
+	</select>
+	
+	
+	<!-- 根据业务ID查询业务详细信息 -->
+	<resultMap type="java.util.HashMap" id="businessDetailsInfoByKid">
+		<result property="protocols" column="PROTOCOLS" />
+		<result property="ports" column="PORTS" />
+		<result property="port" column="PORT" />
+		<result property="host" column="HOST" />
+		<result property="effect" column="EFFECT" />
+		<result property="ip" column="IP" />
+    	<result property="belong" column="BELONG" />
+	</resultMap>
+	<select id="findBusinessDetailsInfoByKid" resultMap="businessDetailsInfoByKid">
+		<![CDATA[
+			SELECT 
+			      T1.PROTOCOLS,
+			      T1.PORTS,
+			      T2.PORT,
+			      T2.HOST,
+			      T2.EFFECT,
+			      T2.IP,
+			      T2.BELONG
+			 FROM
+			      T_NETRES_KNOWLEDGE T1,
+			      T_NETRES_KNOWLEDGE_DETAIL T2
+			WHERE
+			      T1.KID = T2.KID(+)
+			  AND
+			      T1.KID = #{0}
+		]]>
+	</select>
+	
+</mapper>
+

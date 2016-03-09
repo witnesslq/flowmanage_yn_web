@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+	id="WebApp_ID" version="3.0">
+	<display-name>云南互联网综合呈现系统</display-name>
+	
+	<context-param>
+	    <param-name>webAppRootKey</param-name>
+	    <param-value>flowmanage_yn.root</param-value>
+    </context-param>
+
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>classpath:log4j.properties</param-value>
+	</context-param>
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:applicationContext.xml</param-value>
+	
+	</context-param>
+	<!-- 字符过滤器 -->
+	<filter>
+		<filter-name>characterEncoding</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>characterEncoding</filter-name>
+		<url-pattern>/</url-pattern>
+	</filter-mapping>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+	</listener>
+
+
+	<servlet>
+		<servlet-name>blazeds</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param> <param-name>contextConfigLocation</param-name> <param-value>classpath:blazeds-servlet.xml</param-value> 
+			</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet>
+		<servlet-name>RDSDispatchServlet</servlet-name>
+		<servlet-class>flex.rds.server.servlet.FrontEndServlet</servlet-class>
+		<init-param>
+			<param-name>useAppserverSecurity</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>messageBrokerId</param-name>
+			<param-value>_messageBroker</param-value>
+		</init-param>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+
+
+	<servlet-mapping>
+		<servlet-name>blazeds</servlet-name>
+		<url-pattern>/messagebroker/*</url-pattern>
+	</servlet-mapping>
+
+
+	<servlet-mapping id="RDS_DISPATCH_MAPPING">
+		<servlet-name>RDSDispatchServlet</servlet-name>
+		<url-pattern>/CFIDE/main/ide.cfm</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<servlet-name>OrgChartServlet</servlet-name>
+		<servlet-class>com.ultrapower.yworks.yfiles.server.orgchart.OrgChartServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>ConnectionTestServlet</servlet-name>
+		<servlet-class>com.ultrapower.yworks.yfiles.server.servlets.ConnectionTestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OrgChartServlet</servlet-name>
+		<url-pattern>/orgChartServlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>ConnectionTestServlet</servlet-name>
+		<url-pattern>/connectionTest</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- 权限 -->
+	<!-- 
+	<servlet> 
+		<servlet-name>InitSecurityResource</servlet-name> 
+		<servlet-class> 
+			com.ultrapower.flowmanage.common.utils.InitSecurityResource 
+		</servlet-class> 
+		<load-on-startup>0</load-on-startup> 
+	</servlet>
+ -->
+
+<!-- 	<filter>
+		<filter-name>Acegi Filter Chain Proxy</filter-name>
+		<filter-class>org.acegisecurity.util.FilterToBeanProxy</filter-class>
+		<init-param>
+			<param-name>targetClass</param-name>
+			<param-value>org.acegisecurity.util.FilterChainProxy</param-value>
+		</init-param>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>Acegi Filter Chain Proxy</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter>
+		<filter-name>P3PURLFilter</filter-name>
+		<filter-class>com.ultrapower.accredit.common.P3PURLFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>P3PURLFilter</filter-name>
+		<url-pattern>*.jsp</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>P3PURLFilter</filter-name>
+		<url-pattern>*.htm</url-pattern>
+	</filter-mapping> -->
+
+	<!-- 路径错误 -->
+	<error-page>
+		<error-code>404</error-code>
+		<location>/jsp/e-404.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>500</error-code>
+		<location>/jsp/e-500.jsp</location>
+	</error-page>
+
+
+	<!-- spring mvc分发器 -->
+	<!-- <servlet>
+		<servlet-name>springmvc</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>springmvc</servlet-name>
+		<url-pattern>*.html</url-pattern>
+	</servlet-mapping> -->
+</web-app>

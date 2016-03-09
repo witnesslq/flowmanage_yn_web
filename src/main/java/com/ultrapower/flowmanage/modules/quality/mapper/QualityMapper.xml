@@ -1,0 +1,1521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.quality.dao.mapper.QualityMapper">
+
+	
+	<!-- 查询地市TOP200网站时延-互联网质量评估表格数据 -->
+	<resultMap type="java.util.HashMap" id="websiteTimedelay">
+		<result property="city" column="CITY"/>
+		<result property="successrate" column="SUCCESSRATE"/>
+		<result property="packetlossrate" column="PACKETLOSSRATE"/>
+		<result property="avgtimedelay" column="AVGTIMEDELAY"/>
+	</resultMap>
+	<select id="findCityTop200WebsiteTimedelay" resultMap="websiteTimedelay">
+	       SELECT 
+	            T.CITY,
+	            NVL(T.KPI1,0) SUCCESSRATE,
+	            NVL(T.KPI2,0) PACKETLOSSRATE,
+	            NVL(T.KPI3,0) AVGTIMEDELAY
+	       FROM
+	            
+	            
+	            <choose>
+	               		<when test="timeType == 'month'">T_QU_WEBDELAY_month</when>
+	               		<when test="timeType == 'week'">T_QU_WEBDELAY_week</when>
+	               		<when test="timeType == 'day'">T_QU_WEBDELAY_day</when>
+	                </choose> T
+	       WHERE
+	      
+	       <choose>
+	         <when test="timeType == 'week'">
+	         <![CDATA[        
+		               T.start_time >= #{startTime} 
+		            AND
+		               T.end_time <= #{endTime}]]>
+		               </when>
+	         <when test="timeType == 'month' or timeType == 'day'">
+	         <![CDATA[        
+		               T.COLLECTTIME >= #{startTime} 
+		            AND
+		               T.COLLECTTIME <= #{endTime}]]>
+		               </when>
+	         
+	         </choose>    
+	          <if test="companyId  != null and companyId != 1026 ">
+	               and   T.companyid = #{companyId}  </if>
+	</select>
+	<!-- 接入KQI地市对比(菜单) -->
+	<resultMap type="java.util.HashMap" id="KpiMenu">
+		<result property="id" column="ID"/>
+		<result property="objectname" column="OBJECTNAME"/>
+	</resultMap>
+	<select id="findKQIMenu" resultMap="KpiMenu">
+		<![CDATA[
+				 SELECT 
+				       T.OBJECTID ID,
+				       T.OBJECTNAME 
+				   FROM 
+				       T_DIC T 
+				  WHERE  
+				       T.OBJECTTYPE = 'QU_ACC_KQI' 
+				    AND 
+				       T.PARENNTID = -1 
+				    AND 
+				      LEV=1
+		]]>
+	</select>
+	
+	
+	<!-- 查询集团热点TOP10网站信息表格-互联网质量评估 -->
+	<resultMap type="java.util.HashMap" id="groupHotspot">
+		<result property="city" column="CITY"/>
+		<result property="kpiName" column="KPINAME"/>
+		<result property="tmAvgPauseNumber" column="TM_AVGPAUSENUMBER"/>
+		<result property="lmAvgPauseNumber" column="LM_AVGPAUSENUMBER"/>
+		<result property="numberChange" column="NUMBERCHANGE"/>
+		<result property="videoPausePerc" column="VIDEOPAUSEPERC"/>
+		<result property="tmVideoDownloadRate" column="TM_VIDEODOWNLOADRATE"/>
+		<result property="lmVideoDownloadRate" column="LM_VIDEODOWNLOADRATE"/>
+		<!-- <result property="collecttime" column="COLLECTTIME"/> -->
+	</resultMap>
+	<select id="findGroupHotspotTop10Net" resultMap="groupHotspot">
+		  SELECT
+	            '云南'  CITY,
+	            webname KPINAME,
+	            NVL(TM_AVGPAUSENUMBER,0) TM_AVGPAUSENUMBER,
+	            NVL(LM_AVGPAUSENUMBER,0) LM_AVGPAUSENUMBER,
+	            NVL(NUMBERCHANGE,0) NUMBERCHANGE,
+	            NVL(VIDEOPAUSEPERC,0) VIDEOPAUSEPERC,
+	            NVL(TM_VIDEODOWNLOADRATE,0) TM_VIDEODOWNLOADRATE,
+	            NVL(LM_VIDEODOWNLOADRATE,0) LM_VIDEODOWNLOADRATE/*,
+	            COLLECTTIME*/
+	        FROM
+	             
+	               <choose>
+	               		<when test="timeType == 'month'">t_qu_grouphotspot_month</when>
+	               		<when test="timeType == 'week'">t_qu_grouphotspot_week</when>
+	               		<when test="timeType == 'day'">t_qu_grouphotspot_day</when>
+	                </choose> T
+			
+	              WHERE t.AREA = '全省' and 
+	             
+	         <choose>
+	         <when test="timeType == 'week'">
+	         <![CDATA[        
+		               T.start_time >= #{startTime} 
+		            AND
+		               T.end_time <= #{endTime}]]>
+		               </when>
+	         <when test="timeType == 'month' or timeType == 'day'">
+	         <![CDATA[        
+		               T.COLLECTTIME >= #{startTime} 
+		            AND
+		               T.COLLECTTIME <= #{endTime}]]>
+		               </when>
+	         
+	         </choose>         
+	          	 <if test="companyId  != null and companyId != 1026 ">
+	               and   t.companyid = #{companyId}  </if>
+	           
+		
+	</select>
+	<!-- 接入KQI 出口对比 -->
+<!-- 	<resultMap type="java.util.HashMap" id="KQIExitDetail"> -->
+<!-- 		<result property="exitid" column="EXITID"/> -->
+<!-- 		<result property="exitname" column="EXITNAME"/> -->
+<!-- 		<result property="kpiid" column="KPIID"/> -->
+<!-- 		<result property="kpiname" column="KPINAME"/> -->
+<!-- 		<result property="val" column="VAL"/> -->
+<!-- 		<result property="collecttime" column="COLLECTTIME"/> -->
+<!-- 	</resultMap> -->
+	<select id="findKQIExit" resultType="FsChartVo">
+		<![CDATA[
+				     SELECT  T.EXITID,T.EXITNAME,T.KPIID,T.KPINAME label,T.VAL value/*,T.COLLECTTIME*/
+      	         FROM T_QU_KQI_EXIT T
+		          WHERE T.EXITID IN(
+		          SELECT OBJECTID FROM T_DIC D WHERE D.OBJECTTYPE='QU_ACC_KQI'
+		          )
+		          AND T.EXITNAME=#{0}
+		          AND
+					 T.COLLECTTIME >= #{1}
+	        	 AND 
+	            	T.COLLECTTIME < #{2}
+		]]>
+	</select>	      
+	<!--  接入KQI地市对比 -->
+	
+<!-- 	<resultMap type="java.util.HashMap" id="KQICityDetail"> -->
+<!-- 		<result property="city" column="CITY"/> -->
+<!-- 		<result property="kpiid" column="KPIID"/> -->
+<!-- 		<result property="kpiname" column="KPINAME"/> -->
+<!-- 		<result property="val" column="VAL"/> -->
+<!-- 		<result property="collecttime" column="COLLECTTIME"/> -->
+<!-- 	</resultMap> -->
+		<select id="findKQICityComponent"  resultType="FsChartVo">
+			select t1.objectid CITYID,
+			       t1.objectname LABEL,
+			       t3.businame KQINAME,
+			       nvl(t2.value1, 0) value1,
+			       nvl(t2.value2, 0) value2,
+			       t3.val LINEVALUE
+			  from (select * from t_dic where 
+			  objecttype = 'CITY'
+			      
+			   <if test="cityId != null and cityId != 50">
+		             and  cityid = #{cityId} 
+		        </if>) t1
+			  left join (/*select tt1.cityid,
+			  					tt1.city,
+			                    
+			                    tt1.kpiid,
+			                    tt1.kpiname,
+			                    tt1.value1||t_dic.unit value1,
+			                    tt1.value2||t_dic.unit value2
+			                    from 
+			                    (*/select cityid,
+			                    city,
+			                    
+			                    kpiid,
+			                    kpiname,
+			                    sum(decode(companyid, 1027, val, 0)) value1,
+			                    sum(decode(companyid, 1028, val, 0)) value2
+			               from 
+							<choose>
+					         <when test="timeType == 'week'">
+					         <![CDATA[        T_QU_KQI_CITY_week
+						           where    start_time >= #{startTime} and     end_time <= #{endTime}
+						       ]]>
+						               </when>
+					         <when test="timeType == 'month' or timeType == 'day'">
+						         <if test="timeType == 'month'">T_QU_KQI_CITY_month</if>
+						         <if test="timeType == 'day'">T_QU_KQI_CITY_day</if>
+							         <![CDATA[        
+								            where   COLLECTTIME >= #{startTime}        and     COLLECTTIME <= #{endTime}
+								      ]]>
+						      </when>
+					         
+					         </choose>
+			              
+			                and kqitype = #{0}
+			                and kpiid = #{1}
+			                <if test="companyId  != null and companyId != 1026 ">
+	                  		and companyid = #{companyId}  
+	                  		</if>
+			              group by kqitype,
+			                       cityid,
+			                       city,
+			                       
+			                       kpiid,
+			                       kpiname/*) tt1 left join  t_dic on t_dic.objectid = tt1.kpiid*/ )
+			
+			t2
+			    on t1.objectid = t2.cityid
+			   and t1.objectname = t2.city
+			
+			  left join (select * from t_qu_kqi_cfg where busiid = #{1})t3
+			
+			    on t3.cid = t1.objectid
+			   and t3.cname = t1.objectname
+			
+		
+		
+		</select>
+	<!-- <select id="findKQICityComponent"  resultType="FsChartVo">
+		      SELECT
+		            D.OBJECTID CITYID,
+		            D.OBJECTNAME LABEL,
+		            Q.KPINAME KQINAME,
+		            NVL(Q.VAL,0) VALUE,
+		            NVL(CFG.VAL,0) LINEVALUE
+		       FROM
+		           (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'CITY') D
+		       LEFT JOIN
+		           (SELECT 
+		                 T.KQITYPE,
+		                 T.CITYID,
+		                 T.CITY label ,
+		                 T.KPIID,
+		                 T.KPINAME ,
+		                 T.VAL /*,
+		                 T.COLLECTTIME*/
+		             FROM 
+		                 
+		                 <choose>
+	               		<when test="timeType == 'month'">T_QU_KQI_CITY_month</when>
+	               		<when test="timeType == 'week'">T_QU_KQI_CITY_week</when>
+	               		<when test="timeType == 'day'">T_QU_KQI_CITY_day</when>
+	                </choose>
+		                 
+		                   T
+		            WHERE 
+		                 T.KQITYPE = #{0}
+		              AND
+		                 T.KPIID = #{1}
+		               
+		              
+	         <choose>
+	         <when test="timeType == 'week'">
+	         <![CDATA[        
+		           and    T.start_time >= #{startTime} 
+		            AND
+		               T.end_time <= #{endTime}]]>
+		               </when>
+	         <when test="timeType == 'month' or timeType == 'day'">
+	         <![CDATA[        
+		            and   T.COLLECTTIME >= #{startTime} 
+		            AND
+		               T.COLLECTTIME <= #{endTime}]]>
+		               </when>
+	         
+	         </choose>
+	         <if test="cityId != null and cityId != 50">
+		             AND  t.cityid = #{cityId} 
+		              </if>
+		                 <if test="companyId  != null and companyId != 1026 ">
+	                  and t.companyid = #{companyId}  </if>
+		           ) Q
+		        ON D.OBJECTID = Q.CITYID
+		 LEFT JOIN (SELECT * FROM T_QU_KQI_CFG F WHERE F.BUSIID = #{1}) CFG
+                ON D.OBJECTID = CFG.CID
+		        ORDER BY NVL(Q.VAL,0) DESC
+	</select> -->
+	
+	<!-- 根据接入或业务类型和KPIID查询KPI地市对比 -->
+	<resultMap type="java.util.HashMap" id="kpiCityComponect"> 
+		<result property="cityId" column="CITYID"/>
+		<result property="label" column="LABEL"/>
+		<result property="kpiName" column="KPINAME"/>
+		<result property="value" column="VALUE"/>
+	</resultMap>
+	<select id="findKPICityComponent"  resultMap="kpiCityComponect">
+		        SELECT
+				      D.OBJECTID CITYID,
+				      D.OBJECTNAME LABEL,
+				      Q.KPINAME,
+				      NVL(Q.VAL,0) VALUE
+				 FROM
+				     (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'CITY') D
+				 LEFT JOIN
+				     (SELECT 
+				           T.KPITYPE,
+				           T.CITYID,
+				           T.CITY label ,
+				           T.KPIID,
+				           T.KPINAME ,
+				           T.VAL /*,
+				           T.COLLECTTIME*/
+				       FROM 
+				            
+				           
+				           
+				           <choose>
+	               		<when test="timeType == 'month'">T_QU_KPI_CITY_month</when>
+	               		<when test="timeType == 'week'">T_QU_KPI_CITY_week</when>
+	               		<when test="timeType == 'day'">T_QU_KPI_CITY_day</when>
+	                </choose> T
+				      WHERE 
+				           T.KPITYPE = #{0}
+				        AND
+				           T.KPIID IN (/*SELECT OBJECTID FROM T_DIC WHERE PARENNTID = */#{1})
+				           <if test="cityId != null and cityId != 50">
+		             AND  t.cityid = #{cityId} 
+		              </if>
+					<choose>
+						<when test="timeType == 'week'">
+						         <![CDATA[        
+							            and   T.start_time >= #{startTime} 
+							            AND
+							               T.end_time <= #{endTime}]]>
+						</when>
+						<when test="timeType == 'month' or timeType == 'day'">
+						         <![CDATA[        
+							            and   T.COLLECTTIME >= #{startTime} 
+							            AND
+							               T.COLLECTTIME <= #{endTime}]]>
+						</when>
+					
+					</choose>
+				     ) Q
+				  ON D.OBJECTID = Q.CITYID
+				  ORDER BY D.OBJECTID 
+	</select>
+	
+	
+	<select id="getBusiKqiNavTable" resultType="Tree">
+		<![CDATA[
+			SELECT OBJECTNAME NAME,
+			       OBJECTID   ID,
+			       PARENNTID  PARENTID,
+			       LEV,
+			       UNIT,
+			       REMARK,
+			       ORDERID
+			  FROM T_DIC
+			 WHERE OBJECTTYPE = #{type}
+		]]>
+	</select>
+	<!-- 业务KQI地市对比(菜单) -->
+	<resultMap type="java.util.HashMap" id="KpibuiMenu">
+		<result property="id" column="ID"/>
+		<result property="objectname" column="OBJECTNAME"/>
+		<result property="lev" column="LEV"/>
+		<result property="parenntid" column="PARENNTID"/>
+	</resultMap>
+	<select id="findBUIKQIMenu" resultMap="KpibuiMenu">
+		<![CDATA[
+				 SELECT 
+				       T.OBJECTID ID,
+				       T.OBJECTNAME ,
+		               T.PARENNTID,
+		               	T.LEV
+				   FROM 
+				       T_DIC T 
+				  WHERE  
+				       T.OBJECTTYPE = 'QU_BUSI_KQI' 
+				    AND 
+				      LEV=2
+         
+             union all
+             SELECT 
+				       T.OBJECTID ID,
+				       T.OBJECTNAME ,
+               		  T.PARENNTID,
+		               	T.LEV
+				   FROM 
+				       T_DIC T 
+				  WHERE  
+				       T.OBJECTTYPE = 'QU_BUSI_KQI' 
+				    AND 
+				      LEV=3
+              
+		]]>
+	</select>
+	
+	<!-- 根据业务类型查询互联网投诉及用户满意度地市对比-互联网质量评估 -->
+	<select id="findNetComplaintCSATCityContrast" resultType="FsChartVo">
+		<![CDATA[
+		  SELECT
+	             D.OBJECTNAME LABEL,
+	             NVL(QU.VAL,0) VALUE
+	        FROM
+	            (SELECT T.OBJECTID,T.OBJECTNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'CITY') D
+	   LEFT JOIN
+	            (SELECT 
+	                   T.CITYID,
+	                   T.CITY,
+	                   T.KPIID,
+	                   T.VAL
+	               FROM  
+	                   T_QU_COMPLAINT T
+	              WHERE
+	                   T.KPIID = #{0}
+	                AND 
+	                   T.COLLECTTIME >= #{1} 
+	                AND
+	                   T.COLLECTTIME < #{2}  
+	             ) QU
+	          ON
+	             D.OBJECTID = QU.CITYID   
+		]]>
+	</select>
+	
+	<!-- 根据字典表类型查询业务名称 -->
+	<resultMap type="java.util.HashMap" id="businessName">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+	</resultMap>
+	<select id="findBusinessName" resultMap="businessName">
+		<![CDATA[
+			SELECT
+			      T.OBJECTID ID,
+			      T.OBJECTNAME NAME
+			  FROM
+			      T_DIC T
+			 WHERE
+			 	  T.PARENNTID = -1
+			   AND
+			      T.OBJECTTYPE = #{0}
+		]]>
+	</select>
+	
+	<!-- 根据地市ID和业务类型查询省内热点网站情况 -->
+	<resultMap type="java.util.HashMap" id="hotspotNet">
+		<result property="panentName" column="PANENTNAME"/>
+		<result property="kpiName" column="KPINAME"/>
+		<result property="cmcVal" column="CMCVAL"/>
+		<result property="ctcVal" column="CTCVAL"/>
+		<result property="crcVal" column="CRCVAL"/>
+	</resultMap>
+	<select id="findProvincialHotspotNetTable" resultMap="hotspotNet">
+		   SELECT
+		         (SELECT OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'QU_HOTSPOT' AND OBJECTID = D.PARENNTID) PANENTNAME,
+		         D.KPINAME,
+		         NVL(T.CMC_VAL,0) CMCVAL,
+		         NVL(T.CTC_VAL,0) CTCVAL,
+		         NVL(T.CRC_VAL,0) CRCVAL
+		     FROM
+		         (SELECT 
+		                T.OBJECTID,
+		                CASE WHEN T.UNIT IS NOT NULL THEN T.OBJECTNAME||'('||T.UNIT||')' ELSE T.OBJECTNAME END KPINAME,
+		                T.PARENNTID
+		            FROM 
+		                T_DIC T 
+		           WHERE 
+		               t.del_flag =0 and 
+		                T.OBJECTTYPE = 'QU_HOTSPOT' 
+		             AND 
+		                T.PARENNTID = #{0}
+		             ORDER BY T.OBJECTNAME DESC
+		          ) D
+		LEFT JOIN
+		         (SELECT
+		               Q.CITYID,
+		               Q.CITY,
+		               Q.KPIID,
+		               Q.KPINAME,
+		               Q.CMC_VAL,
+		               Q.CTC_VAL,
+		               Q.CRC_VAL
+		           FROM
+		               
+		               <choose>
+	               		<when test="timeType == 'month'">T_QU_HOTSPOT_month</when>
+	               		<when test="timeType == 'week'">T_QU_HOTSPOT_week</when>
+	               		<when test="timeType == 'day'">T_QU_HOTSPOT_day</when>
+	                </choose>
+		                Q
+		          WHERE
+		               Q.CITYID = #{1}
+		            
+		              <if test="companyId  != null and companyId != 1026 ">
+	               AND   Q.companyid = #{companyId}  </if>
+	       <choose>
+	         <when test="timeType == 'week'">
+	         <![CDATA[        
+		           AND    Q.start_time >= #{startTime} 
+		            AND
+		               Q.end_time <= #{endTime}]]>
+		               </when>
+	         <when test="timeType == 'month' or timeType == 'day'">
+	         <![CDATA[        
+		           AND    Q.COLLECTTIME >= #{startTime} 
+		            AND
+		               Q.COLLECTTIME <= #{endTime}]]>
+		               </when>
+	         
+	         </choose>     
+		         ) T
+		      ON
+		         D.OBJECTID = T.KPIID
+			
+	</select>
+	
+	<!-- 根据接入或业务类型查询KQI地市对比(菜单) -->
+	<resultMap type="java.util.HashMap" id="kqiCityMenu">
+		<result property="objectId" column="OBJECTID"/>
+		<result property="objectName" column="OBJECTNAME"/>
+		<result property="objectType" column="OBJECTTYPE"/>
+		<result property="parenntId" column="PARENNTID"/>
+		<result property="lev" column="LEV"/>
+		<result property="unit" column="UNIT"/>
+	</resultMap>
+	<select id="findKQICityMenu" resultMap="kqiCityMenu">
+		SELECT 
+		      T.OBJECTID,
+		      T.OBJECTNAME,
+		      T.OBJECTTYPE,
+		      T.PARENNTID,
+		      T.LEV,
+		      T.UNIT
+		 FROM 
+		      T_DIC T 
+		WHERE 
+		      OBJECTTYPE = #{objectType} 
+		      
+		<if test="objectType == 'QU_ACC_KQI'">
+		  AND LEV IN (1,2)
+	    </if>
+	    <if test="objectType == 'QU_BUSI_KQI'">
+	      /*AND OBJECTID != 466*/
+		  AND LEV IN (2,3)
+		  
+	    </if>
+	</select>
+	
+	<!-- 根据业务类型和业务级别查询接入KQI出口指标名称 -->
+	<resultMap type="java.util.HashMap" id="accKQIExitName">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="unit" column="UNIT"/>
+	</resultMap>
+	<select id="findAccKQIExitName" resultMap="accKQIExitName">
+		<![CDATA[
+			SELECT
+			      T.OBJECTID ID,
+			      T.OBJECTNAME NAME,
+			      T.UNIT
+			  FROM
+			      T_DIC T
+			 WHERE
+			      T.OBJECTTYPE = #{0}
+			   AND
+			      T.LEV = #{1}
+		]]>
+	</select>
+	
+	<!-- 根据KPIID查询接入KQI出口对比 -->
+	<select id="findAccKQIExitContrast" resultType="FsChartVo">
+		<![CDATA[
+			SELECT
+			      D.OBJECTID CITYID,
+			      D.OBJECTNAME LABEL,
+			      Q.KPINAME KQINAME,
+			      NVL(Q.VAL,0) VALUE
+			 FROM
+			     (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'QU_EXIT') D
+			 LEFT JOIN
+			     (SELECT 
+			           T.EXITID,
+			           T.EXITNAME label ,
+			           T.KPIID,
+			           T.KPINAME ,
+			           T.VAL/* ,
+			           T.COLLECTTIME*/
+			       FROM 
+			           T_QU_KQI_EXIT  T
+			      WHERE
+			           T.KPIID = #{0}
+			        AND 
+			           T.COLLECTTIME >= #{1}
+			        AND 
+			           T.COLLECTTIME < #{2}  
+			     ) Q
+			  ON D.OBJECTID = Q.EXITID
+		]]>
+	</select>
+	
+	<!-- 根据KPI的父级ID查询接入KPI出口对比 -->
+	<resultMap type="java.util.HashMap" id="accKPIExitContrast"> 
+		<result property="cityId" column="CITYID"/>
+		<result property="label" column="LABEL"/>
+		<result property="kpiName" column="KPINAME"/>
+		<result property="value" column="VALUE"/>
+	</resultMap>
+	<select id="findAccKPIExitContrast" resultMap="accKPIExitContrast">
+		<![CDATA[
+			SELECT
+			      D.OBJECTID CITYID,
+			      D.OBJECTNAME LABEL,
+			      Q.KPINAME,
+			      NVL(Q.VAL,0) VALUE
+			 FROM
+			     (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'QU_EXIT') D
+			 LEFT JOIN
+			     (SELECT 
+			           T.EXITID,
+			           T.EXITNAME label ,
+			           T.KPIID,
+			           T.KPINAME ,
+			           T.VAL /*,
+			           T.COLLECTTIME*/
+			       FROM 
+			           T_QU_KQI_EXIT  T
+			      WHERE
+			           T.KPIID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID = #{0})
+			        AND 
+			           T.COLLECTTIME >= #{1}
+			        AND 
+			           T.COLLECTTIME < #{2}
+			     ) Q
+			  ON D.OBJECTID = Q.EXITID
+			  ORDER BY D.OBJECTID 
+		]]>
+	</select>
+	
+	<insert id="insertTest" parameterType="com.ultrapower.flowmanage.modules.quality.vo.Test">
+		insert into T_TEST(id,name) values(#{id},#{name})
+	</insert>
+	<!-- 查找厂家 -->
+	<select id="findCompany" resultType="hashmap">
+		select t.objectid "id", t.objectname "name" from t_dic t  where OBJECTTYPE = 'QU_COMPANY'
+	</select>
+	
+	<select id="getZidingyi1" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME desc) AS "row_number"
+			from (
+		</if>
+	select city "city",
+       cityid "cityid",
+       companyid "companyid",
+       company "company",
+       to_char(COLLECTTIME ,'yyyy-mm-dd') COLLECTTIME ,
+       sum(decode(kpiid, 30001, val)) "SuccessRate" /*"网页打开成功率"*/,
+       sum(decode(kpiid, 30010, val)) "OpenPageTime" /*"页面打开时长"*/,
+       
+       sum(decode(kpiid, 30026, val)) "DealSuccRate" /*"下载成功率"*/,
+       sum(decode(kpiid, 30025, val)) "DealSpeed" /*"下载速率"*/,
+       
+       sum(decode(kpiid, 30027, val)) "SuccessRate1" /*"视频连接成功率"*/,
+       sum(decode(kpiid, 30019, val)) "FirstByteOffsetTime" /*"视频开始播放等待时长"*/,
+       sum(decode(kpiid, 30018, val)) "CacheNum" /*"视频播放停顿次数"*/,
+       
+       sum(decode(kpiid, 30046, val)) "SetupConnectOffsetTime" /*"连接时间"*/,
+       sum(decode(kpiid, 30043, val)) "ConventionTime" /*"鉴权时长"*/,
+       sum(decode(kpiid, 30047, val)) "LoginOffsetTime" /*"总时间"*/,
+       sum(decode(kpiid, 30044, val)) "LinkRate" /*"成功率"*/,
+       
+       sum(decode(kpiid, 30055, val)) "UploadSendSpeed" /*"邮件发送速率"*/,
+       sum(decode(kpiid, 30056, val)) "DownloadSendSpeed" /*"邮件接收速率"*/,
+       
+       sum(decode(kpiid, 30041, val)) "Delay" /*"时延"*/,
+       sum(decode(kpiid, 30042, val)) "Shake" /*"抖动"*/,
+       sum(decode(kpiid, 30040, val)) "LoseByteRate" /*"丢包率"*/
+
+  from 
+  <choose>
+   <when test="timeType == 'month' ">
+   T_QU_KQI_CITY_month
+   </when>
+   <otherwise>T_QU_KQI_CITY_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+ group by city, cityid, companyid, company, COLLECTTIME
+ <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getZidingyiCount1" resultType="int">
+	
+	select count(*)
+  from (select *
+          from 
+  <choose>
+   <when test="timeType == 'month' ">
+   T_QU_KQI_CITY_month
+   </when>
+   <otherwise>T_QU_KQI_CITY_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+ group by city, cityid, companyid, company, COLLECTTIME)
+	
+	</select>
+	
+	<select id="getZidingyi4" resultType="hashmap">
+	<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME desc) AS "row_number"
+			from (
+		</if>
+	
+	 SELECT
+	 city "city",
+       cityid "cityid",
+       companyid "companyid",
+       company "company",
+       to_char(COLLECTTIME ,'yyyy-mm-dd') COLLECTTIME ,
+	            /*CASE WHEN CITY IS NULL THEN '陕西' ELSE CITY END CITY,*/
+	            NVL(TM_AVGPAUSENUMBER,0) TM_AVGPAUSENUMBER,
+	            NVL(VIDEOPAUSEPERC,0) VIDEOPAUSEPERC,
+	            NVL(TM_VIDEODOWNLOADRATE,0) TM_VIDEODOWNLOADRATE
+	        FROM
+	             
+	               <choose>
+	               		<when test="timeType == 'month'">t_qu_grouphotspot_month</when>
+	               		<when test="timeType == 'day'">t_qu_grouphotspot_day</when>
+	                </choose> T
+			
+	              WHERE  t.AREA = '全省' and 
+	             
+	         <![CDATA[        
+		               T.COLLECTTIME >= #{starttime} 
+		            AND
+		               T.COLLECTTIME <= #{endtime}]]>
+	         
+	          	 <if test="company  != null and company != 1026 ">
+	               and   t.companyid = #{company}  </if>
+	         <if test="city != null and city != '全部'">and city = #{city}    </if>      
+	           
+	<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	
+	
+	<select id="getZidingyiCount4" resultType="int">
+	
+	select count(*)
+          from 
+  <choose>
+   <when test="timeType == 'month' ">
+   t_qu_grouphotspot_month
+   </when>
+   <otherwise>t_qu_grouphotspot_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+ 
+	
+	</select>
+	
+	
+	<select id="getZidingyi3" resultType="hashmap">
+	<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME desc) AS "row_number"
+			from (
+		</if>
+	
+	 SELECT 
+	 		city "city",
+       cityid "cityid",
+       companyid "companyid",
+       company "company",
+       to_char(COLLECTTIME ,'yyyy-mm-dd') COLLECTTIME ,
+              NVL(T.KPI1,0) "SuccessRate",
+              NVL(T.KPI2,0) "DealSpeed",
+              NVL(T.KPI3,0) "DealTotalOffSetTime"
+         FROM
+              
+              
+              <choose>
+                     <when test="timeType == 'month'">T_QU_WEBDELAY_month</when>
+
+                     <when test="timeType == 'day'">T_QU_WEBDELAY_day</when>
+                  </choose> T
+	       WHERE
+         <![CDATA[        
+		               T.COLLECTTIME >= #{starttime} 
+		            AND
+		               T.COLLECTTIME <= #{endtime}]]>
+                   <if test="company  != null and company != 1026 ">
+	               and   T.companyid = #{company}  </if>
+                 
+	         <if test="city != null and city != '全部'">and city = #{city}    </if>      
+	           
+	<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	
+	
+	<select id="getZidingyiCount3" resultType="int">
+	
+	select count(*)
+          from 
+  <choose>
+   <when test="timeType == 'month' ">
+   T_QU_WEBDELAY_month
+   </when>
+   <otherwise>T_QU_WEBDELAY_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+	
+	</select>
+	<select id="getZidingyi2" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME desc) AS "row_number"
+			from (
+		</if>
+	select city "city",
+       cityid "cityid",
+       companyid "companyid",
+       company "company",
+       to_char(COLLECTTIME ,'yyyy-mm-dd') COLLECTTIME ,
+       
+       sum(decode(kpiid, 21001, CMC_VAL)) "SuccessRate" /*"成功率"*/,
+       sum(decode(kpiid, 21103, CMC_VAL)) "WebDispCompRate" /*"网页显示完整率"*/,
+       sum(decode(kpiid, 21014, CMC_VAL)) "Url100POffSetTime" /*"DNS解析成功率"*/,
+       sum(decode(kpiid, 21013, CMC_VAL)) "ConnSuccRate" /*"连接成功率"*/,
+       sum(decode(kpiid, 21085, CMC_VAL)) "Url90POffSetTime" /*"90%元素下载平均时延"*/,
+       sum(decode(kpiid, 21011, CMC_VAL)) "Url100POffSetTime1" /*"页面全部下载平均时延"*/,
+       sum(decode(kpiid, 21086, CMC_VAL)) "DealSpeed" /*"平均90%元素下载速率"*/,
+       
+       sum(decode(kpiid, 21015, CMC_VAL)) "SuccessRate1" /*"成功率"*/,
+       sum(decode(kpiid, 21028, CMC_VAL)) "DnsResSuccRATE" /*"DNS解析成功率"*/,
+       sum(decode(kpiid, 21027, CMC_VAL)) "ConnSuccRate1" /*" 连接成功率"*/,
+       sum(decode(kpiid, 21020, CMC_VAL)) "DnsQueryOffsetTime" /*"平均DNS查询时延（秒）"*/,
+       sum(decode(kpiid, 21016, CMC_VAL)) "FirstByteOffsetTime" /*"平均首帧时延（秒）"*/,
+       sum(decode(kpiid, 21023, CMC_VAL)) "DealOffsetTime" /*"平均播放时延（秒）"*/,
+       sum(decode(kpiid, 21032, CMC_VAL)) "DealSpeed1" /*"平均播放速率（KB/s）"*/,
+       sum(decode(kpiid, 21024, CMC_VAL)) "CacheOffsetTime" /*"平均缓存总时长（秒）"*/,
+       
+       sum(decode(kpiid, 21043, CMC_VAL)) "ConventionTime" /*"签权时间"*/,
+       sum(decode(kpiid, 21045, CMC_VAL)) "LinkRate" /*"签权成功率"*/,
+       sum(decode(kpiid, 21046, CMC_VAL)) "SetupConnectOffsetTime" /*"TCP连接时间"*/,
+       sum(decode(kpiid, 21047, CMC_VAL)) "LoginOffsetTime" /*"总时间"*/,
+       
+       sum(decode(kpiid, 21041, CMC_VAL)) "Delay" /*"时延"*/,
+       sum(decode(kpiid, 21040, CMC_VAL)) "LoseByteRate" /*"丢包率"*/,
+       sum(decode(kpiid, 21042, CMC_VAL)) "Shake" /*"抖动"*/,
+       
+       sum(decode(kpiid, 21066, CMC_VAL)) "SuccRate" /*"成功率"*/,
+       sum(decode(kpiid, 21065, CMC_VAL)) "ConnSuccRate2" /*"连接成功率"*/,
+       sum(decode(kpiid, 21063, CMC_VAL)) "AuthSuccRate" /*" 认证成功率"*/,
+       sum(decode(kpiid, 21064, CMC_VAL)) "AvgSendMailDelay" /*"平均发送邮件时延"*/,
+       sum(decode(kpiid, 21056, CMC_VAL)) "DownloadSendSpeed" /*"平均下载速率"*/
+       
+       from
+  <choose>
+   <when test="timeType == 'month' ">
+   T_QU_HOTSPOT_month
+   </when>
+   <otherwise>T_QU_HOTSPOT_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+ group by city, cityid, companyid, company, COLLECTTIME
+ <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getZidingyiCount2" resultType="int">
+	
+	select count(*)
+  from (select *
+          from 
+  <choose>
+   <when test="timeType == 'month' ">
+   T_QU_HOTSPOT_month
+   </when>
+   <otherwise>T_QU_HOTSPOT_day</otherwise>
+  </choose>
+  
+ where 
+ <if test="city != null and city != '全部'">city = #{city}   and </if>
+ 
+ 	 <![CDATA[
+ 	 COLLECTTIME >= #{starttime}/*to_date('2015-06-01', 'yyyy-mm-dd')*/   and COLLECTTIME <=#{endtime} /*to_date('2015-06-01', 'yyyy-mm-dd')*/
+   ]]>
+   <if test="company != null and company != 1026">
+   and companyid = #{company}
+   </if>
+ group by city, cityid, companyid, company, COLLECTTIME)
+	
+	</select>
+	<select id="getXiangxi1" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY "time" desc) AS "row_number"
+			from (
+		</if>
+		<choose>
+		<when test="company=='飞思达'">
+			<choose>
+				<when test="yewu == '网页浏览'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+			       CityName  "city",
+			       '飞思达' "company",
+			       resultoperator "resultoperator",webname "webname",webip "webip",
+			       SuccessRate "SuccessRate",
+			       OpenPageTime "OpenPageTime"
+			  from RES_FSD_HTTP_WEB
+			  </when>
+				<when test="yewu == 'HTTP/FTP下载'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				       resultoperator "resultoperator",webname "webname",hostip "webip",ipbelongto "ipbelongto",
+				       '飞思达' "company",
+				       DealSuccRate "DealSuccRate",
+				       DealSpeed "DealSpeed"
+				  from RES_FSD_HTTP_DOWNLOAD				
+				</when>
+				<when test="yewu == '网页视频'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       Cityname "city",
+				       resultoperator "resultoperator",webname "webname",weburl "weburl",hostip "webip",
+				       '飞思达' "company",
+				       SuccessRate "SuccessRate",
+				       FirstByteOffsetTime "FirstByteOffsetTime",
+				       CacheNum "CacheNum"
+				
+				  from RES_FSD_FLV_WEBFLV		
+				</when>
+				<when test="yewu == '即时通信'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				        resultoperator "resultoperator",webname "webname",
+				       '飞思达' "company",
+				       SetupConnectOffsetTime "SetupConnectOffsetTime",
+				       ConventionTime "ConventionTime",
+				       LoginOffsetTime "LoginOffsetTime",
+				       LinkRate "LinkRate"
+				
+				  from RES_FSD_IM_FETION				
+				
+				</when>
+				<when test="yewu == '邮件'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				       resultoperator "resultoperator",
+				       '飞思达' "company",
+				       UploadSendSpeed "UploadSendSpeed",
+				       DownloadSendSpeed "DownloadSendSpeed"
+				
+				  from RES_FSD_EMAILPROPERTY
+				</when>
+				<when test="yewu == '游戏'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				       resultoperator "resultoperator",webname "webname",hostip "webip",ipbelongto "ipbelongto",
+				       '飞思达' "company",
+				       Delay "Delay",
+				       Shake "Shake",
+				       LoseByteRate "LoseByteRate"
+				  from RES_FSD_GAMESERVER				
+				</when>
+			</choose>
+		</when>
+		<when test="company=='普天'">
+			<choose>
+				<when test="yewu == '网页浏览'">
+				 select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+			        CityName "city",
+			        '普天' "company",
+			        SuccessCount /TestCount*100  "SuccessRate",
+			        DealTotalOffSetTime "OpenPageTime",
+			        TestCount "TestCount",
+			        SuccessCount "SuccessCount"
+			   from RES_PUTIAN_HTTP_WEB t
+				</when>
+				<when test="yewu == '网页视频'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+		               Cityname "city",
+		               '普天' "company",
+		                TestCount "TestCount",
+               			ConnectSuccessCount "ConnectSuccessCount",
+               			ConnectSuccessCount / TestCount * 100 "SuccessRate",
+		               FirstByteOffsetTime "FirstByteOffsetTime",
+		               CacheNum "CacheNum"
+		        
+		          from RES_PUTIAN_FLV_WEBFLV
+				</when>
+			</choose>
+		</when>
+		
+		</choose>
+		where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>     
+		 <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getXiangxiCount1" resultType="int">
+		select count(*) from 
+		<choose>
+		<when test="company=='飞思达'">
+			<choose>
+				<when test="yewu == '网页浏览'">
+				RES_FSD_HTTP_WEB
+			  </when>
+				<when test="yewu == 'HTTP/FTP下载'">
+				RES_FSD_HTTP_DOWNLOAD				
+				</when>
+				<when test="yewu == '网页视频'">
+				RES_FSD_FLV_WEBFLV				
+				</when>
+				<when test="yewu == '即时通信'">
+				
+				RES_FSD_IM_FETION				
+				
+				</when>
+				<when test="yewu == '邮件'">
+				 RES_FSD_EMAILPROPERTY
+				</when>
+				<when test="yewu == '游戏'">
+				RES_FSD_GAMESERVER				
+				</when>
+			</choose>
+		</when>
+		<when test="company=='普天'">
+			<choose>
+				<when test="yewu == '网页浏览'">
+				RES_PUTIAN_HTTP_WEB t
+				</when>
+				<when test="yewu == '网页视频'">
+				RES_PUTIAN_FLV_WEBFLV
+				</when>
+			</choose>
+		</when>
+		
+		</choose>
+		where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>
+	</select>
+	
+	
+	<select id="getXiangxi2" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY "time" desc) AS "row_number"
+			from (
+		</if>
+		<choose>
+		<when test="company=='飞思达'">
+			<choose>
+				<when test="yewu == '网页'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+			       CityName "city",
+			        resultoperator "resultoperator",webname "webname",webip "webip",
+			       '飞思达' "company",
+			       Url100POffSetTime "Url100POffSetTime",
+			       WebDispCompRate "WebDispCompRate",
+			       DealSpeed "DealSpeed",
+			       ConnSuccRate "ConnSuccRate",
+			       SuccessRate "SuccessRate",
+			       DnsResSuccRATE "DnsResSuccRATE",
+			       Url90POffSetTime "Url90POffSetTime"
+			
+			  from RES_FSD_HTTP_WEB t
+			  </when>
+				<when test="yewu == '视频'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       Cityname "city",
+				       resultoperator "resultoperator",webname "webname",weburl "weburl",hostip "webip",
+				       '飞思达' "company",
+				       FirstByteOffsetTime "FirstByteOffsetTime",
+				       CacheOffsetTime "CacheOffsetTime",
+				       DealSpeed "DealSpeed",
+				       DealOffsetTime "DealOffsetTime",
+				       DnsQueryOffsetTime "DnsQueryOffsetTime",
+				       ConnSuccRate "ConnSuccRate",
+				       SuccessRate "SuccessRate",
+				       DnsResSuccRATE "DnsResSuccRATE"
+				
+				  from RES_FSD_FLV_WEBFLV 
+				</when>
+				<when test="yewu == 'IM-飞信'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				         resultoperator "resultoperator",webname "webname",
+				       '飞思达' "company",
+				       LoginOffsetTime "LoginOffsetTime",
+				       SetupConnectOffsetTime "SetupConnectOffsetTime",
+				       ConventionTime "ConventionTime",
+				       LinkRate "LinkRate"
+				
+				  from RES_FSD_IM_FETION			
+				
+				</when>
+				
+				<when test="yewu == '游戏'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				        resultoperator "resultoperator",webname "webname",hostip "webip",ipbelongto "ipbelongto",
+				       '飞思达' "company",
+				       Delay "Delay",
+				       Shake "Shake",
+				       LoseByteRate "LoseByteRate"
+				
+				  from RES_FSD_GAMESERVER				
+				</when>
+				<when test="yewu == '邮箱'">
+				select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				       CityName "city",
+				        resultoperator "resultoperator",
+				       '飞思达' "company",
+				       AuthSuccRate "AuthSuccRate",
+				       DownloadSendSpeed "DownloadSendSpeed",
+				       AvgSendMailDelay "AvgSendMailDelay",
+				       ConnSuccRate "ConnSuccRate",
+				       SuccRate "SuccRate"
+				
+				  from RES_FSD_EMAILPROPERTY
+
+				</when>
+			</choose>
+		</when>
+		<when test="company=='普天'">
+			<choose>
+				<when test="yewu == '网页'">
+				 select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+				        CityName "city",
+				        '普天' "company",
+				        DealTotalOffSetTime "Url100POffSetTime",
+				        ResourcesSuccessCount "ResourcesSuccessCount",/*网页显示完整次数*/
+				        ResourcesSuccessCount/TestCount*100 "WebDispCompRate",
+				        DealSpeed "DealSpeed",
+				        SetupConnectSuccessCount "SetupConnectSuccessCount",/*连接成功次数*/
+				        SetupConnectSuccessCount/TestCount*100 "ConnSuccRate",
+				        SuccessCount "SuccessCount", /*成功次数*/
+				        SuccessCount /TestCount*100  "SuccessRate",
+				        DnsSuccessCount/TestCount*100 "DnsResSuccRATE",
+				        DnsSuccessCount "DnsSuccessCount",/*DNS解析成功次数*/
+				        TestCount "TestCount", /*测试次数*/
+				        Url90POffSetTime "Url90POffSetTime"
+				   from RES_PUTIAN_HTTP_WEB 
+				</when>
+				<when test="yewu == '视频'">
+					select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+					       CityName "city",
+					       '普天' "company",
+					       FirstByteOffsetTime "FirstByteOffsetTime",
+					       CacheOffsetTime "CacheOffsetTime",
+					       DealSpeed "DealSpeed",
+					       DealOffsetTime "DealOffsetTime",
+					       DnsQueryOffsetTime "DnsQueryOffsetTime",
+					       
+					       ConnectSuccessCount / TestCount * 100 "ConnSuccRate",
+					       SuccessCount / TestCount * 100 "SuccessRate",
+					       DnsSuccessCount / TestCount * 100 "DnsResSuccRATE",
+					       
+					       ConnectSuccessCount "ConnectSuccessCount", /*视频连接成功次数*/
+					       
+					       TestCount       "TestCount", /*测试次数*/
+					       SuccessCount    "SuccessCount", /*测试成功次数*/
+					       DnsSuccessCount "DnsSuccessCount" /*DNS解析成功次数*/
+					
+					  from RES_PUTIAN_FLV_WEBFLV
+
+				</when>
+			</choose>
+		</when>
+		
+		</choose>
+		where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>
+		 <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getXiangxiCount2" resultType="int">
+		select count(*) from
+		<choose>
+		<when test="company=='飞思达'">
+			<choose>
+				<when test="yewu == '网页'">
+				RES_FSD_HTTP_WEB
+			  </when>
+				<when test="yewu == '视频'">
+				RES_FSD_FLV_WEBFLV				
+				</when>
+				<when test="yewu == 'IM-飞信'">
+				
+				RES_FSD_IM_FETION				
+				
+				</when>
+				
+				<when test="yewu == '游戏'">
+				RES_FSD_GAMESERVER				
+				</when>
+				<when test="yewu == '邮箱'">
+				 RES_FSD_EMAILPROPERTY
+				</when>
+			</choose>
+		</when>
+		<when test="company=='普天'">
+			<choose>
+				<when test="yewu == '网页'">
+				RES_PUTIAN_HTTP_WEB t
+				</when>
+				<when test="yewu == '视频'">
+				RES_PUTIAN_FLV_WEBFLV
+				</when>
+			</choose>
+		</when>
+		
+		</choose>
+		where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>
+	</select>
+	
+	
+	<select id="getXiangxi3" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY "time" desc) AS "row_number"
+			from (
+		</if>
+		select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+		       CityName     "city",
+		       
+		      
+		       DealSpeed "DealSpeed",
+		       DealTotalOffSetTime "DealTotalOffSetTime" ,
+		        <choose>
+		       	<when test='company=="飞思达"'>
+		       	resultoperator "resultoperator",
+		       	 '飞思达' "company",
+			       SuccessRate "SuccessRate",
+			       webname "webname",
+			       webip "webip"
+			        from RES_FSD_HTTP_WEB
+		       </when>
+		       	<when test='company=="普天"'>
+		       	'普天' "company",
+			        SuccessCount / TestCount * 100 "SuccessRate",
+			       TestCount "TestCount",
+			       SuccessCount "SuccessCount"
+			  from RES_PUTIAN_HTTP_WEB
+		       	</when>
+		       </choose>
+		      where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>     
+		 <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getXiangxiCount3" resultType="int">
+		select count(*) from
+		<choose>
+		       	<when test='company=="飞思达"'>
+		       	RES_FSD_HTTP_WEB
+		       	</when>
+		       	<when test='company=="普天"'>
+		       	RES_PUTIAN_HTTP_WEB
+		       	</when>
+		 </choose>
+		  where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>    
+	</select>
+	
+	
+	<select id="getXiangxi4" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY "time" desc) AS "row_number"
+			from (
+		</if>
+		select to_char(SumStartTime,'yyyy-mm-dd hh24:mi:ss') "time",
+		       CityName "city",
+		       CacheNum "CacheNum",
+		       DealSpeed "DealSpeed",
+		       CacheOffsetTime "CacheOffsetTime",
+		       <choose>
+		       	<when test='company=="飞思达"'>
+		       '飞思达' "company",
+		       case
+		         when webname like '乐视%' then
+		          '乐视'
+		         when webname like '优酷%' then
+		          '优酷'
+		         when webname like '土豆%' then
+		          '土豆'
+		         when webname like '腾讯%' then
+		          '腾讯'
+		         when webname like '搜狐%' then
+		          '搜狐'
+		         when webname like '新浪%' then
+		          '新浪'
+		         when webname like '酷6%' then
+		          '酷6'
+		         when webname like '爱奇艺%' then
+		          '爱奇艺'
+		         when webname like 'PPTV%' then
+		          'PPTV'
+		         when webname like '凤凰网%' then
+		          '凤凰网'
+		         when webname like 'CNTV%' then
+		          'CNTV'
+		         when webname like 'PPS%' then
+		          'PPS'
+		       
+		       end "webname",
+		       CacheRate "CacheRate",
+		       HostIP "HostIP",
+		       resultoperator "resultoperator",
+		       WebUrl "WebUrl"
+		        from RES_FSD_FLV_WEBFLV
+		       </when>
+		       	<when test='company=="普天"'>
+		       	'普天' "company"
+		       	 from RES_PUTIAN_FLV_WEBFLV
+		       	</when>
+		       </choose>
+		       
+		 
+		 where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test='company=="飞思达" and webname != null'>
+		 and webname like '${webname}%' 
+		 </if>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>
+		 <if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<select id="getXiangxiCount4" resultType="int">
+		select count(*) from
+			<choose>
+		       	<when test='company=="飞思达"'>
+		       	  RES_FSD_FLV_WEBFLV
+		       </when>
+		       	<when test='company=="普天"'>
+		       	 RES_PUTIAN_FLV_WEBFLV
+		       </when>
+		       
+		     </choose>
+		where 
+		 <![CDATA[   SumStartTime >= #{starttime}   and SumStartTime <=#{endtime}]]>
+		 <if test='company=="飞思达" and webname != null'>
+		 and webname like '${webname}%' 
+		 </if>
+		 <if test="city != null ">
+		 and cityname in
+		 <foreach collection = "city" item = "item" index = "index" separator = "," open="(" close=")">
+		  #{item}
+		 </foreach>
+		 </if>
+	</select>
+	
+	<!-- 根据时间和时间类型查询重点指标概述 -->
+	<select id="findQualityKPIInfo" resultType="map">
+		  SELECT 
+		  		 D.OBJECTID,
+				 D.REMARK LABEL,
+				 ROUND(AVG(NVL(T.VAL,0)),2) VAL
+			FROM			
+				 (SELECT OBJECTID,REMARK FROM T_DIC WHERE OBJECTTYPE = 'QU_BUSI_KQI' AND OBJECTID IN (30112,30113,30114,30115)) D
+		LEFT JOIN
+				 (SELECT 
+					    KPIID,
+					    KPINAME,
+					    VAL
+					FROM      
+				  <choose>
+            		<when test="timeType == 'day'">T_QU_KQI_CITY_DAY</when>
+            		<when test="timeType == 'week'">T_QU_KQI_CITY_WEEK</when>
+            		<when test="timeType == 'month'">T_QU_KQI_CITY_MONTH</when>
+	              </choose>
+				  WHERE 1 = 1
+				  <choose>
+            		<when test="timeType == 'day' || timeType == 'month'">
+            			AND COLLECTTIME &gt;= #{startTime} AND COLLECTTIME &lt; #{endTime}
+            		</when>
+            		<when test="timeType == 'week'">
+            			AND START_TIME = #{startTime} AND END_TIME = #{endTime}
+            		</when>
+	              </choose>
+				 ) T
+			ON
+				D.OBJECTID = T.KPIID
+	  GROUP BY D.OBJECTID,D.REMARK
+	</select>
+	
+	<!-- 根据业务类型、模块名称查询指标阀值信息 -->
+	<select id="findThresholdConfig" resultType="ThresholdConfigVo">
+		<![CDATA[
+			SELECT 
+			       KPIID,
+			       KPINAME,
+			       MINVALUE,
+			       MAXVALUE,
+			       RESULTVALUE
+			  FROM T_THRESHOLD_CONFIG T
+			 WHERE T.MODULENAME = #{0}
+			   AND T.KPIID IN
+			       (SELECT OBJECTID FROM T_DIC WHERE OBJECTTYPE = 'QU_BUSI_KQI' AND OBJECTID IN (30112,30113,30114,30115))
+		]]>
+	</select>	
+</mapper>
+

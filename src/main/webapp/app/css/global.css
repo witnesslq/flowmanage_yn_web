@@ -1,0 +1,9 @@
+@namespace mx "library://ns.adobe.com/flex/mx";
+Application {
+	font-size:18px;
+	font-style: normal;
+	font-weight: normal;
+}
+mx|Alert{
+	font-size:14px;
+}

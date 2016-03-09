@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 域权限初始化配置文件　-->
+
+<!--application:与PASM集成的应用系统,id: 应用系统标识(appName) -->
+<application  id="FLOWMANAGE_HUBEI" xmlns="http://www.ultrapower.com.cn/schema/application"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.ultrapower.com.cn/schema/application dimension.xsd">
+	<!-- name: 应用系统名称　-->
+	<name>互联网流量平台</name>
+	<!-- description: 应用系统描述 -->
+	<description>湖北移动互联网流量管理平台</description>
+	
+	<!--应用系统的菜单列表-->
+	<menus>
+		<!-- 菜单 id:菜单ID name:菜单名称 description:菜单描述 order: 菜单排序，若不定义，则从‘1’开始，按照顺赋予默认值 -->
+		<menu id="index_hubei" name="互联网流量平台"  description="互联网流量平台" >
+			<menu id="index1_hubei" name="首页" url="/app/index.html" description="互联网流量平台首页" order="0" />
+			<menu id="index2_hubei" name="三网协同分析" url="http://10.25.117.68:50001/swGis/bin/main.html" description="三网协同分析" order="1" />
+			<menu id="index3_hubei" name="健康度分析" url="/app/health.html" description="健康度分析" order="2" />
+			<menu id="index4_hubei" name="互联网质量分析" url="/app/quality.html" description="互联网质量分析" order="3" />
+			<menu id="index5_hubei" name="互联网流量分析" url="/app/flow.html" description="互联网流量分析" order="4" />
+			<menu id="index6_hubei" name="热点资源分析" url="/app/hotSpot.html" description="热点资源分析" order="5" />
+			<menu id="index7_hubei" name="互联网资源库" url="/app/internetResources.html" description="互联网资源库" order="6" />
+			<menu id="index8_hubei" name="业务基准线分析" url="/app/busBenchMark.html" description="业务基准线分析" order="7" />
+			<menu id="index9_hubei" name="WLAN日志分析" url="/app/wlanLogAnalyse.html" description="WLAN日志分析" order="8" />
+			<menu id="index10_hubei" name="端到端业务分析" url="/app/end2end.html" description="端到端业务分析" order="9" />
+		</menu>
+	</menus>
+
+  <!--维度值范围列表，维度值范围可以跨应用系统使用 -->
+	<dimensionScope-list>
+	  <!-- 维度值范围  id：维度值范围ID name: 维度值范围名称 type: 0:私有维度，1:组织机构维度，2:时间维度(目前只支持私有维度) -->
+		<dimensionScope id="city_hubei" name="地市" type="0" >
+			<!--维度值　id:维度值ID code: 维度值编号 name:维度值名称　order:排序号，若不定义，则从‘1’开始，按照顺赋予默认值 -->
+			<dimensionValue id="quansheng" name="全省" order="0" />
+			<dimensionValue id="shengji" name="省级" order="1" />
+			<dimensionValue id="kuasheng" name="跨省" order="2" />
+			<dimensionValue id="shiji" name="市级" order="3">
+				<dimensionValue id="36" name="襄阳" order="0" />
+				<dimensionValue id="37" name="鄂州" order="1" />
+				<dimensionValue id="38" name="咸宁" order="2" />
+				<dimensionValue id="39" name="武汉" order="3" />
+				<dimensionValue id="40" name="荆州" order="4" />
+				<dimensionValue id="41" name="孝感" order="5" />
+				<dimensionValue id="42" name="宜昌" order="6" />
+				<dimensionValue id="43" name="黄石" order="7" />
+				<dimensionValue id="44" name="十堰" order="8" />
+				<dimensionValue id="45" name="黄冈" order="9" />
+				<dimensionValue id="46" name="荆门" order="10" />
+				<dimensionValue id="47" name="恩施" order="11" />
+				<dimensionValue id="48" name="随州" order="12" />
+				<dimensionValue id="50" name="新江汉" order="13" />
+				<dimensionValue id="51" name="天门" order="14" />
+				<dimensionValue id="52" name="潜江" order="15" />
+			</dimensionValue>
+		</dimensionScope>
+	</dimensionScope-list> 
+	
+		<!--对象类列表，一个应用系统可以对多个对象类进行授权-->
+	<objectClasses>
+	  <!-- 对象类-->
+		<objectClass id="flowmanageobj_hubei" name="流量管理" description="流量管理" >
+		  <!--　维度列表　-->
+			<dimension-list>
+					<!-- 维度定义 id:维度ID name:维度名称 description:维度描述 dimensionScope-ref:引用的维度值范围ID -->
+					<dimension id="locale_dimension" name="地域" description="这是一个地域" dimensionScope-ref="city_hubei" />
+			</dimension-list>
+			<!--操作列表-->
+			<operation-list> 
+				<!--操作定义 id:操作ID name:操作名称 order:排序号，若不定义，则从‘1’开始，按照顺赋予默认值 depends:依赖操作的ID --> 
+				<operation id="view" name="查看" type="select" order="0"/>
+<!-- 				<operation id="update" name="修改" type="update" order="1" depends="view" /> -->
+			</operation-list>
+		</objectClass>
+	</objectClasses>
+</application>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<message layout="default" name="三网流量发展健康度"  rate="85.5" >
+  <message name="GSM流量发展健康度" rate="82" layout="default" >
+    <message layout="default" name="资源消耗" rate="79.5" >
+      <message  name="GSM容量投放效益" rate="82" tem="12M"  />
+    </message>
+  </message>
+</message>

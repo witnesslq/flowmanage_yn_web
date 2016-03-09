@@ -1,0 +1,121 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+/*.canvas_bg{
+	
+	background-image:Embed("assets/images/tooltip_yiji.png");
+	backgroundSize:"100%";
+	horizontalAlign:center;
+	verticalAlign:middle;
+	fontWeight: bold;
+	fontFamily: MicroYaHei;
+	textAlign:center;
+}
+
+.canvas_bg_up{
+	
+	background-image:Embed("assets/images/tooltip_erji_up.png");
+	backgroundSize:"100%";
+	horizontalAlign:center;
+	verticalAlign:middle;
+	fontWeight: bold;
+	fontFamily: MicroYaHei;
+	textAlign:center;
+}
+.health_bg{
+	
+	background-image:Embed("assets/images/health/health_bg_01.png");
+	backgroundSize:"100%";
+	horizontalAlign:center;
+	verticalAlign:middle;
+	fontWeight: bold;
+	fontFamily: MicroYaHei;
+}*/
+.label_main{
+	color:#ffffff;
+	font-weight:bold;
+	fontSize: 14;
+	font-family: MicroYaHei;
+	lineHeight:24px;
+	textAlign:center;
+	horizontalCenter:0;
+}
+.label_main_up{
+	color:#ffffff;
+	font-weight:bold;
+	fontSize: 14;
+	font-family: MicroYaHei;
+	lineHeight:24px;
+	textAlign:center;
+	bottom:17;
+	horizontalCenter:0;
+}
+.label_text_left{
+	fontSize:16px;
+	color:#FFFFFF;
+	left:0;
+	bottom:10;
+}
+
+.label_text_right{
+	fontSize:16px;
+	color:#FFFFFF;
+	right:0;
+	bottom:10;
+}
+.label_text_left_up{
+	fontSize:16px;
+	color:#FFFFFF;
+	left:0;
+	bottom:0;
+}
+.label_text_right_up{
+	fontSize:16px;
+	color:#FFFFFF;
+	right:0;
+	bottom:0;
+}
+.label_health{
+	
+	fontSize:12px;
+	font-family: MicroYaHei;
+	font-weight:bold;
+	color:#FFFFFF;
+}
+.tabStyle{
+	color: #ffffff;
+	backgroundColor: #009AE5;
+	textRollOverColor: #ffffff;
+	textSelectedColor: #ffffff;
+}
+.firstTab{
+	color: #ffffff;
+	backgroundColor: #009AE5;
+	textRollOverColor: #ffffff;
+	textSelectedColor: #ffffff;
+	
+}
+.MySelectedTab {
+	color: #ffffff;
+	backgroundColor: #009AE5;
+	textRollOverColor: #ffffff;
+	textSelectedColor: #ffffff;
+}
+.TabNavigator 
+{ 
+/*	firstTabStyleName:firstTab;*/
+/*	selectedTabTextStyleName:MySelectedTab;*/
+	fontFamily: '����';
+	fontSize: 10;
+	fontWeight: normal;
+	tabStyleName:tabStyle;
+	disabledColor:#444444;
+}
+s|Label
+{
+	color: #0D157A;
+	fontSize: 16;
+}
+
+

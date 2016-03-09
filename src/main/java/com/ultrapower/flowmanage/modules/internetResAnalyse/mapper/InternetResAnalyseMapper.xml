@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.internetResAnalyse.dao.mapper.InternetResAnalyseMapper">
+	
+	<!-- 根据网站类型查询资源数量及大小分析TOP10网站名称 -->
+	<resultMap type="java.util.HashMap" id="top10WebName">
+		<result property="webName" column="WEBNAME"/>
+<!-- 		<result property="url" column="URL"/> -->
+	</resultMap>
+	<select id="findTop10WebName" resultMap="top10WebName">
+		SELECT
+			   ROWNUM,
+			   Q.WEBNAME,
+			   Q.URl
+			FROM
+				(SELECT 
+						 T1.WEBNAME WEBNAME,
+						 MAX(T1.URL) URL,
+			             SUM(T.CONTENTSIZE) CONTENTSIZE,
+			             SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+			             
+			      FROM 
+			      		T_NETRES_WEBNAMEMATCH T1,
+			      	   <if test="webType == 'WEBPAGE'">
+	                   		RES_FSD_WEBPACHONG T
+	                   </if>
+	                   <if test="webType == 'VIDEO'">
+	                    	RES_FSD_VOIDPACHONG T
+	                   </if>
+			       WHERE 
+			       		T.WEBNAME = T1.URL 
+			       	  AND
+                        T1.TYPE = #{webType}
+			       	  AND
+			       	  	TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+	             GROUP BY
+	                    T1.WEBNAME  
+	             ORDER BY
+						<if test="sourceType == 'sourceCount'">
+							RESOURCESNUMBER DESC
+						</if>
+			          	<if test="sourceType == 'sourceSize'">
+							CONTENTSIZE DESC
+						</if>)Q
+			WHERE
+				ROWNUM &lt; 11
+		
+	</select>
+	
+	<!-- 根据网站类型、网站名称查询各运营商资源数量及大小(饼图) -->
+	<resultMap type="java.util.HashMap" id="resAnalyse">
+		<result property="label" column="RESULTOPERATOR"/>
+		<result property="value" column="CONTENTSIZE"/>
+		<result property="value" column="RESOURCESNUMBER"/>
+	</resultMap>
+	<select id="findSourceAnalyse" resultMap="resAnalyse">
+	select
+		ROWNUM,
+		c1.*
+	from
+		(select
+			c.*
+		from
+			(SELECT 
+                  
+                  T.RESULTOPERATOR RESULTOPERATOR,
+                  <if test="sourceType == 'sourceSize'">
+                  	SUM(T.CONTENTSIZE) CONTENTSIZE
+                  </if>
+                  <if test="sourceType == 'sourceCount'">
+                  	SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+                  </if>
+                  
+              FROM 
+              	   <if test="webType == 'WEBPAGE'">
+                   		RES_FSD_WEBPACHONG T,
+                   </if>
+                   <if test="webType == 'VIDEO'">
+                    	RES_FSD_VOIDPACHONG T,
+                   </if>
+                   T_NETRES_WEBNAMEMATCH T1
+               <if test="webName == '全部'">
+               		WHERE
+               </if>
+               <if test="webName != '全部'">
+               		WHERE 
+               			T1.WEBNAME=#{webName}
+                   AND
+               </if>
+                      T.WEBNAME=T1.URL
+                   AND
+                        T1.TYPE = #{webType}
+                   AND
+                   		T.RESULTOPERATOR IS NOT NULL
+                   AND
+			       	  TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+			       
+               GROUP BY
+                     T.RESULTOPERATOR)C
+           order by
+                 <if test="sourceType == 'sourceSize'">
+                  	CONTENTSIZE DESC
+                  </if>
+                  <if test="sourceType == 'sourceCount'">
+                  	RESOURCESNUMBER DESC
+                  </if>)c1
+         WHERE
+			ROWNUM &lt; 4
+		
+	</select>
+	
+	<!-- 根据网站类型和网站名称查询各归属地移动资源大小及数量排名 -->
+	<resultMap type="java.util.HashMap" id="mobileSourceRank">
+		<result property="rowNum" column="ROWNUM" />
+		<result property="label" column="RESULTPROVINCENAME" />
+		<result property="contentSize" column="CONTENTSIZE" />
+		<result property="persentSize" column="PERSENTSIZE" />
+		<result property="resourcesNumber" column="RESOURCESNUMBER" />
+		<result property="persentCount" column="PERSENTCOUNT" />
+	</resultMap>
+	<select id="findMobileSourceRank" resultMap="mobileSourceRank">
+		
+			SELECT 
+                                ROWNUM,
+                                Q.RESULTPROVINCENAME RESULTPROVINCENAME,
+                                Q.CONTENTSIZE CONTENTSIZE,
+                                ROUND(DECODE(Q1.CONTENTSIZE,0,0,Q.CONTENTSIZE/Q1.CONTENTSIZE),4) PERSENTSIZE,
+                                Q.RESOURCESNUMBER RESOURCESNUMBER,
+                                ROUND(DECODE(Q1.RESOURCESNUMBER,0,0,Q.RESOURCESNUMBER/Q1.RESOURCESNUMBER),4) PERSENTCOUNT
+                     FROM
+                                
+	                     (SELECT 
+	                           T.RESULTPROVINCENAME RESULTPROVINCENAME,
+	                           SUM(T.CONTENTSIZE) CONTENTSIZE,
+	                           SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+	                              
+	                      FROM 
+	                      	   <if test="webType == 'WEBPAGE'">
+			                   		RES_FSD_WEBPACHONG T,
+			                   </if>
+			                   <if test="webType == 'VIDEO'">
+			                    	RES_FSD_VOIDPACHONG T,
+			                   </if>
+	                           T_NETRES_WEBNAMEMATCH T1
+	                       <if test="webName == '全部'">
+			               		WHERE
+			               </if>
+			               <if test="webName != '全部'">
+			               		WHERE 
+			               			T1.WEBNAME=#{webName}
+			                   AND
+			               </if>
+	                         		T.RESULTOPERATOR LIKE '%移动%'
+	                             AND    
+	                             	T.WEBNAME=T1.URL
+	                             AND
+	                             	T.RESULTPROVINCENAME='陕西'
+	                             AND
+                        			T1.TYPE = #{webType}
+	                             AND
+			       	  				TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+	                          GROUP BY 
+	                          		T.RESULTPROVINCENAME 
+	                          )Q,
+                
+	                      (SELECT 
+	                           SUM(T.CONTENTSIZE) CONTENTSIZE,
+	                           SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+	                       FROM 
+	                      	   <if test="webType == 'WEBPAGE'">
+			                   		RES_FSD_WEBPACHONG T,
+			                   </if>
+			                   <if test="webType == 'VIDEO'">
+			                    	RES_FSD_VOIDPACHONG T,
+			                   </if>
+	                            T_NETRES_WEBNAMEMATCH T1
+	                       <if test="webName == '全部'">
+			               		WHERE
+			               </if>
+			               <if test="webName != '全部'">
+			               		WHERE 
+			               			T1.WEBNAME=#{webName}
+			                   AND
+			               </if> 
+	                         	 T.RESULTOPERATOR LIKE '%移动%'
+	                           AND
+	                             	T.RESULTPROVINCENAME IS NOT NULL
+	                           AND
+                        			T1.TYPE = #{webType}
+	                           AND    
+	                             T.WEBNAME=T1.URL
+	                           AND
+			       	  			 TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+	                            )Q1
+	                UNION ALL
+	                SELECT 
+                                ROWNUM,
+                                Q.RESULTPROVINCENAME RESULTPROVINCENAME,
+                                Q.CONTENTSIZE CONTENTSIZE,
+                                ROUND(DECODE(Q1.CONTENTSIZE,0,0,Q.CONTENTSIZE/Q1.CONTENTSIZE),4) PERSENTSIZE,
+                                Q.RESOURCESNUMBER RESOURCESNUMBER,
+                                ROUND(DECODE(Q1.RESOURCESNUMBER,0,0,Q.RESOURCESNUMBER/Q1.RESOURCESNUMBER),4) PERSENTCOUNT
+                     FROM
+                                
+	                     (SELECT 
+	                           T.RESULTPROVINCENAME RESULTPROVINCENAME,
+	                           SUM(T.CONTENTSIZE) CONTENTSIZE,
+	                           SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+	                              
+	                      FROM 
+	                      	   <if test="webType == 'WEBPAGE'">
+			                   		RES_FSD_WEBPACHONG T,
+			                   </if>
+			                   <if test="webType == 'VIDEO'">
+			                    	RES_FSD_VOIDPACHONG T,
+			                   </if>
+	                           T_NETRES_WEBNAMEMATCH T1
+	                       <if test="webName == '全部'">
+			               		WHERE
+			               </if>
+			               <if test="webName != '全部'">
+			               		WHERE 
+			               			T1.WEBNAME=#{webName}
+			                   AND
+			               </if>
+	                         		T.RESULTOPERATOR LIKE '%移动%'
+	                             AND    
+	                             	T.WEBNAME=T1.URL
+	                             AND
+	                             	T.RESULTPROVINCENAME !='陕西'
+	                             AND
+	                             	T.RESULTPROVINCENAME IS NOT NULL
+	                             AND
+                        			T1.TYPE = #{webType}
+	                             AND
+			       	  				TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+	                          GROUP BY 
+	                          		T.RESULTPROVINCENAME 
+	                          ORDER BY 
+									<if test="sourceType == 'sourceCount'">
+										RESOURCESNUMBER DESC
+									</if>
+						          	<if test="sourceType == 'sourceSize'">
+										CONTENTSIZE DESC
+									</if>)Q,
+                
+	                      (SELECT 
+	                           SUM(T.CONTENTSIZE) CONTENTSIZE,
+	                           SUM(T.RESOURCESNUMBER) RESOURCESNUMBER
+	                       FROM 
+	                      	   <if test="webType == 'WEBPAGE'">
+			                   		RES_FSD_WEBPACHONG T,
+			                   </if>
+			                   <if test="webType == 'VIDEO'">
+			                    	RES_FSD_VOIDPACHONG T,
+			                   </if>
+	                            T_NETRES_WEBNAMEMATCH T1
+	                       <if test="webName == '全部'">
+			               		WHERE
+			               </if>
+			               <if test="webName != '全部'">
+			               		WHERE 
+			               			T1.WEBNAME=#{webName}
+			                   AND
+			               </if> 
+	                         	 T.RESULTOPERATOR LIKE '%移动%'
+	                           AND
+	                             	T.RESULTPROVINCENAME IS NOT NULL
+	                           AND
+                        			T1.TYPE = #{webType}
+	                           AND    
+	                             T.WEBNAME=T1.URL
+	                           AND
+			       	  			 TRUNC(T.SUMSTARTTIME) = TO_DATE(#{getTime}, 'YYYY-MM-DD')
+	                            )Q1
+                       
+		
+	</select>
+	
+	<!-- 根据网站类型、网站名称分页查询资源明细列表 -->
+	<resultMap type="java.util.HashMap" id="resDetailTable">
+		<result property="sumStartTime" column="SUMSTARTTIME"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="cityName" column="CITYNAME"/>
+		<result property="webIp" column="WEBIP"/>
+		<result property="resultProvinceName" column="RESULTPROVINCENAME"/>
+		<result property="resultOperator" column="RESULTOPERATOR"/>
+		<result property="firstByteOffSetTime" column="FIRSTBYTEOFFSETTIME"/>
+		<result property="dealSpeed" column="DEALSPEED"/>
+		<result property="downloadSize" column="DOWNLOADSIZE"/>
+		<result property="contentSize" column="CONTENTSIZE"/>
+		<result property="resourcesNumber" column="RESOURCESNUMBER"/>
+		<result property="comprehensiveQuality" column="COMPREHENSIVEQUALITY"/>
+	</resultMap>
+	<select id="findResDetailTable" resultMap="resDetailTable">
+		
+	       SELECT
+		           Q.*
+		       FROM
+		           (SELECT 
+                     ROWNUM "NUMBER",
+                     S.*
+                 FROM
+                     (SELECT 
+                            T.SUMSTARTTIME SUMSTARTTIME,
+                            T1.WEBNAME WEBNAME,
+                            T.CITYNAME CITYNAME,
+                            T.WEBIP WEBIP,
+                            T.RESULTPROVINCENAME RESULTPROVINCENAME,
+                            T.RESULTOPERATOR RESULTOPERATOR,
+                           	T.FIRSTBYTEOFFSETTIME FIRSTBYTEOFFSETTIME,
+                           	T.DEALSPEED DEALSPEED,
+                           	T.DOWNLOADSIZE DOWNLOADSIZE,
+                            T.CONTENTSIZE CONTENTSIZE,
+                            T.RESOURCESNUMBER RESOURCESNUMBER,
+                            T.COMPREHENSIVEQUALITY COMPREHENSIVEQUALITY
+                         FROM 
+                             (SELECT 
+	                                  URL,
+	                                  WEBNAME,
+	                                  TYPE 
+	                              FROM 
+	                                  T_NETRES_WEBNAMEMATCH
+	                              WHERE
+	                              	  TYPE = #{webType}) T1,
+	                              <if test="webType == 'WEBPAGE'">
+	                              		RES_FSD_WEBPACHONG T
+	                              </if>
+	                              <if test="webType == 'VIDEO'">
+		                              	RES_FSD_VOIDPACHONG T
+	                              </if>
+	                         <if test="webName == '全部'">
+				               		WHERE
+				             </if>
+				             <if test="webName != '全部'">
+				               		WHERE 
+				               			T1.WEBNAME=#{webName}
+				                   AND
+				             </if> 
+							     T1.URL=T.WEBNAME
+							   AND
+							      T.SUMSTARTTIME &gt;= #{today}
+							   AND
+							      T.SUMSTARTTIME &lt; #{nextDay}
+							   AND
+							      T.COMPREHENSIVEQUALITY IS NOT NULL
+							   ORDER BY T.COMPREHENSIVEQUALITY DESC) S
+	              ) Q
+	         WHERE 
+	           	   Q."NUMBER" &gt; (#{pageNo} - 1) * #{pageSize}
+		       AND
+		           Q."NUMBER" &lt;= #{pageNo} * #{pageSize}
+		
+	</select>
+	
+	
+	<!-- 根据网站类型、网站名称分页查询资源明细列表记录数 -->
+	<select id="findResDetailTableCount" resultType="int">
+		
+			SELECT 
+                           
+                            COUNT(T1.WEBNAME)
+
+                          FROM 
+                             (SELECT 
+                                  URL,
+                                  WEBNAME,
+                                  TYPE 
+                              FROM 
+                                  T_NETRES_WEBNAMEMATCH
+                              WHERE
+                              	  TYPE = #{webType}) T1,
+                              	  <if test="webType == 'WEBPAGE'">
+	                              	RES_FSD_WEBPACHONG T
+	                              </if>
+	                              <if test="webType == 'VIDEO'">
+	                              	RES_FSD_VOIDPACHONG T
+	                              </if>
+                         <if test="webName == '全部'">
+			               		WHERE
+			             </if>
+			             <if test="webName != '全部'">
+			               		WHERE 
+			               			T1.WEBNAME=#{webName}
+			                   AND
+			             </if> 
+						     T1.URL=T.WEBNAME
+						   AND
+						      T.SUMSTARTTIME &gt;= #{today}
+						   AND
+						      T.SUMSTARTTIME &lt; #{nextDay}
+		
+	</select>
+	
+	
+	<!-- 根据网站类型、网站名称分页查询资源明细列表全部 -->
+	<resultMap type="java.util.HashMap" id="resDetailTableAll">
+		<result property="sumStartTime" column="SUMSTARTTIME"/>
+		<result property="webName" column="WEBNAME"/>
+		<result property="cityName" column="CITYNAME"/>
+		<result property="webIp" column="WEBIP"/>
+		<result property="resultProvinceName" column="RESULTPROVINCENAME"/>
+		<result property="resultOperator" column="RESULTOPERATOR"/>
+		<result property="firstByteOffSetTime" column="FIRSTBYTEOFFSETTIME"/>
+		<result property="dealSpeed" column="DEALSPEED"/>
+		<result property="downloadSize" column="DOWNLOADSIZE"/>
+		<result property="contentSize" column="CONTENTSIZE"/>
+		<result property="resourcesNumber" column="RESOURCESNUMBER"/>
+		<result property="comprehensiveQuality" column="COMPREHENSIVEQUALITY"/>
+	</resultMap>
+	<select id="findResDetailTableAll" resultMap="resDetailTableAll">
+		
+	       SELECT 
+                     ROWNUM "NUMBER",
+                     S.*
+                 FROM
+                     (SELECT 
+                            T.SUMSTARTTIME SUMSTARTTIME,
+                            T1.WEBNAME WEBNAME,
+                            T.CITYNAME CITYNAME,
+                            T.WEBIP WEBIP,
+                            T.RESULTPROVINCENAME RESULTPROVINCENAME,
+                            T.RESULTOPERATOR RESULTOPERATOR,
+                           	T.FIRSTBYTEOFFSETTIME FIRSTBYTEOFFSETTIME,
+                           	T.DEALSPEED DEALSPEED,
+                           	T.DOWNLOADSIZE DOWNLOADSIZE,
+                            T.CONTENTSIZE CONTENTSIZE,
+                            T.RESOURCESNUMBER RESOURCESNUMBER,
+                            T.COMPREHENSIVEQUALITY COMPREHENSIVEQUALITY
+                         FROM 
+                             (SELECT 
+	                                  URL,
+	                                  WEBNAME,
+	                                  TYPE 
+	                              FROM 
+	                                  T_NETRES_WEBNAMEMATCH
+	                              WHERE
+	                              	  TYPE = #{webType}) T1,
+	                              <if test="webType == 'WEBPAGE'">
+	                              		RES_FSD_WEBPACHONG T
+	                              </if>
+	                              <if test="webType == 'VIDEO'">
+		                              	RES_FSD_VOIDPACHONG T
+	                              </if>
+	                         <if test="webName == '全部'">
+				               		WHERE
+				             </if>
+				             <if test="webName != '全部'">
+				               		WHERE 
+				               			T1.WEBNAME=#{webName}
+				                   AND
+				             </if> 
+							     T1.URL=T.WEBNAME
+							   AND
+							      T.SUMSTARTTIME &gt;= #{today}
+							   AND
+							      T.SUMSTARTTIME &lt; #{nextDay}
+							   AND
+							      T.COMPREHENSIVEQUALITY IS NOT NULL
+							   ORDER BY T.COMPREHENSIVEQUALITY DESC) S
+	              
+		
+	</select>
+	
+	
+</mapper>
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<configuration>
+        <charts>
+        		<chart id="1" sceneId="1" label="评估点地市对比" chartType="MSColumn2D" height="400" width="500">
+                    <chartParams>
+                        <field name="caption" value="三网流量发展健康度评估点地市对比" remark="主标题"/>
+                        <field name="numberSuffix" value="" remark="数据后缀"/>
+                        <field name="yAxisMaxValue" value="100" remark="Y轴最大值"/>
+                    </chartParams>
+                    <chartDatas sqlType="healthCharts" num="1" columType="normal" menucolum="score,city" 
+                    columns="score,city,healthname,healthid" 
+                    orderby="healthname"  remark="menucolum菜单对应字段,colums柱状图字段">
+                        <field name="seriesName" value="指标得分情况" remark="柱一"/>
+                    </chartDatas>
+                </chart>
+        </charts>
+ </configuration>

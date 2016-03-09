@@ -1,0 +1,13 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace TabBar "com.ultrapower.viewer.components.TabBar.*";
+
+@font-face{
+	src:url("font/MSYHBD.TTF");
+	font-family:MSYH;
+}
+@font-face{
+	src:url("font/MSYH.TTF");
+	font-family:MSYHOLD;
+}

@@ -1,0 +1,127 @@
+<?xml version="1.0" ?>
+<configuration label="导航页">
+	<scenes>
+			<!-- <scene label="三网协同分析"  width="240" height="150"
+	           bitmapFill="u17_normal.png"
+	           icon="u27_normal.png"
+	           config="com/ultrapower/config/scene/swconfig.xml"
+	           page="http://10.25.117.68:50001/swGis/bin/main.html"
+	           color="0X1F9EFF"/> -->
+
+	    <!-- <scene label="网络级监控"  width="240" height="150"
+	           bitmapFill="u17_normal.png"
+	           icon="u27_normal.png"
+      	       config="navConfigXml/swmap.xml"
+               page="monitor.html"
+               color="0x1F9EFF"/> -->
+
+
+		<scene label="互联网质量分析"  width="240" height="150"
+			   icon="u31_normal.png"
+			   bitmapFill="u21_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page="quality.html"
+	           color="0X008B8E"/> 
+	           
+		<scene label="健康度分析"  width="240" height="150"
+		       bitmapFill="u15_normal.png"
+		       icon="u29_normal.png"
+		       config="navConfigXml/swmap.xml"
+		       page="healthNew.html"
+		       color="0X1AC627"/>
+		
+	           
+  		<scene label="互联网流量分析"  width="240" height="150"
+	           icon="u33_normal.png"
+	           bitmapFill="u23_normal.png"
+               config="navConfigXml/swmap.xml"
+	           page="flow.html"
+	           color="0XE4696A"/> 
+		
+		<!-- <scene label="关键指标分析"  width="240" height="150"
+               bitmapFill="u39_normal.png"
+	           icon="u47_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page="internetKeyIndex.html"
+	           color="0X205A8E"/>  -->  
+			   
+  		<!-- <scene label="热点资源分析"  width="240" height="150"
+               bitmapFill="u39_normal.png"
+	           icon="u47_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page="hotSpot.html"
+	           color="0X205A8E"/> -->
+	           
+        <!-- <scene label="互联网资源库"  width="240" height="150"
+               bitmapFill="u41_normal.png"
+               icon="u48_normal.png"
+               config="navConfigXml/swmap.xml"
+               page="internetResAnalyse.html"
+               color="0xE8641A"/> -->
+               
+        <!-- <scene label="业务基准线分析"  width="240" height="150"
+               bitmapFill="u43_normal.png"
+               icon="busBenchMark.png"
+               config="navConfigXml/swmap.xml"
+               page="busBenchMark.html"
+               color="0xBC1F2F"/>
+               
+        <scene label="WLAN日志分析"  width="240" height="150"
+               bitmapFill="u45_normal.png"
+               icon="wlanLogAnalyse.png"
+               config="navConfigXml/swmap.xml"
+               page="wlanLogAnalyse.html"
+               color="0x009F3C"/>
+               
+	    <scene label="端到端业务分析"  width="240" height="150"
+               bitmapFill="u11_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page="end2end.html"
+	           color="0xBC1F2F"/> -->
+	           
+        <!-- <scene label="部省上报专题"  width="240" height="150"
+               bitmapFill="u43_normal.png"
+               icon="busBenchMark.png"
+               config="navConfigXml/swmap.xml"
+               page="provincesubject.html"
+               color="0xBC1F2F"/> -->
+                        	           
+	    <scene label="等待添加"  width="240" height="150"
+               bitmapFill="u39_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page=""
+	           color="0x205A8E"/>
+	     
+	    <scene label="等待添加"  width="240" height="150"
+               bitmapFill="u41_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page=""
+	           color="0xE8641A"/>
+	     
+	    <scene label="等待添加"  width="240" height="150"
+               bitmapFill="u43_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page=""
+	           color="0xBC1F2F"/>
+	     
+	    <scene label="等待添加"  width="240" height="150"
+               bitmapFill="u45_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page=""
+	           color="0x009F3C"/>
+	     
+	    <scene label="等待添加"  width="240" height="150"
+               bitmapFill="u11_normal.png"
+	           icon="add_normal.png"
+	           config="navConfigXml/swmap.xml"
+	           page=""
+	           color="0xF6961A"/>
+	     
+	           
+	</scenes>
+</configuration>

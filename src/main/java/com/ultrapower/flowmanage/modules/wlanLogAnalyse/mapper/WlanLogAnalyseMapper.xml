@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.wlanLogAnalyse.dao.mapper.WlanLogAnalyseMapper">
+
+	<!-- 根据时间、用户名称、上线认证、下线认证、认证成功、认证失败查询portal日志记录数-->
+	<select id="findPortalLogRowCount" parameterType="com.ultrapower.flowmanage.modules.wlanLogAnalyse.vo.WlanLogParameter" resultType="int">
+		   SELECT
+                  COUNT(T.USER_NAME) ROWCOUNT
+             FROM
+                  T_WLANLOG_PORTALLOG T
+            WHERE
+                  1 = 1
+            <if test="userName != null and userName != ''">
+              AND T.USER_NAME LIKE '%'||#{userName}||'%'
+            </if>
+            <if  test="action != null">
+              AND T.ACTION IN 
+            	<foreach item="item" index="index" collection="action" open="(" separator="," close=")">
+        			#{item}
+            	</foreach>
+             </if>
+             <if  test="result != null">
+              AND T.RESULT IN 
+              	<foreach item="item" index="index" collection="result" open="(" separator="," close=")">
+            		#{item}
+            	</foreach>
+             </if>
+              AND T.COLLECTTIME &gt;= TO_DATE(#{startTime}, 'YYYY-MM-DD HH24:MI')
+		      AND T.COLLECTTIME &lt;= TO_DATE(#{endTime}, 'YYYY-MM-DD HH24:MI')
+	</select>
+	
+	
+	
+	<!-- 根据时间、用户名称、上线认证、下线认证、认证成功、认证失败分页查询portal日志列表-->
+	<resultMap type="java.util.HashMap" id="portalLogTable">
+		<result property="collecttime" column="COLLECTTIME" />
+		<result property="souceServers" column="SOURCE_SERVERS" />
+		<result property="userName" column="USER_NAME"/>
+		<result property="userIp" column="USER_IP" />
+		<result property="acIp" column="AC_IP"/>
+		<result property="acOperator" column="AC_OPERATOR" />
+		<result property="action" column="ACTION" />
+		<result property="result" column="RESULT" />
+		<result property="failureReason" column="FAILURE_REASON" />
+		<result property="domainName" column="DOMAIN_NAME" />
+		<result property="portalNumber" column="PORTAL_NUMBER" />
+	</resultMap>
+	<select id="findPortalLogTable" parameterType="com.ultrapower.flowmanage.modules.wlanLogAnalyse.vo.WlanLogParameter" resultMap="portalLogTable">
+		SELECT
+		     Q.*
+		 FROM
+		     (SELECT
+		            ROWNUM "NUMBER",
+		            S.*
+		        FROM
+		           (SELECT 
+		           		   T.SOURCE_SERVERS,
+		                   T.USER_NAME,
+		                   T.USER_IP,
+		                   T.AC_IP,
+		                   T.AC_OPERATOR,
+		                   T.ACTION,
+		                   T.RESULT,
+		                   T.FAILURE_REASON,
+		                   T.DOMAIN_NAME,
+		                   T.PORTAL_NUMBER,
+		                   TO_CHAR(T.COLLECTTIME, 'YYYY/MM/DD HH24:MI') COLLECTTIME
+		              FROM
+		                   T_WLANLOG_PORTALLOG T
+		             WHERE
+		                   1 = 1
+		             <if test="userName != null and userName != ''">
+		               AND T.USER_NAME LIKE '%'||#{userName}||'%'
+		             </if>
+		             <if  test="action != null">
+		               AND T.ACTION IN 
+		            	 <foreach item="item" index="index" collection="action" open="(" separator="," close=")">
+		            	 	#{item}
+		            	 </foreach>
+		              </if>
+		              <if test="result != null">
+		               AND T.RESULT IN 
+		               	<foreach item="item" index="index" collection="result" open="(" separator="," close=")">
+		            		#{item}
+		            	</foreach>
+		               </if>
+		               AND T.COLLECTTIME &gt;= TO_DATE(#{startTime}, 'YYYY-MM-DD HH24:MI')
+		      		   AND T.COLLECTTIME &lt;= TO_DATE(#{endTime}, 'YYYY-MM-DD HH24:MI')
+		               ORDER BY T.COLLECTTIME DESC
+		           ) S
+		     ) Q
+		WHERE 
+		     Q."NUMBER" &gt; (#{pageNo} - 1) * #{pageSize}
+		  AND
+			 Q."NUMBER" &lt;= #{pageNo} * #{pageSize}
+			 
+	</select>
+	
+	
+	<!-- 根据时间、用户名称、执行成功、执行失败查询MML日志记录数-->
+	<select id="findMmlLogRowCount" parameterType="com.ultrapower.flowmanage.modules.wlanLogAnalyse.vo.WlanLogParameter" resultType="int">
+		 SELECT
+               COUNT(T.USER_NAME) ROWCOUNT
+          FROM
+               T_WLANLOG_MMLLOG T
+         WHERE
+               1 = 1
+         <if test="userName != null and userName != ''">
+           AND T.USER_NAME LIKE '%'||#{userName}||'%'
+         </if>
+         <if test="result != null">
+           AND T.RESULT IN 
+	         <foreach item="item" index="index" collection="result" open="(" separator="," close=")">
+	           	#{item}
+	         </foreach>
+         </if>
+           AND T.COLLECTTIME &gt;= TO_DATE(#{startTime}, 'YYYY-MM-DD HH24:MI')
+		   AND T.COLLECTTIME &lt;= TO_DATE(#{endTime}, 'YYYY-MM-DD HH24:MI')	  
+	</select>
+	
+	<!-- 根据时间、用户名称、执行成功、执行失败分页查询MML日志列表-->
+	<resultMap type="java.util.HashMap" id="findMmlRowTable">
+		<result property="collecttime" column="COLLECTTIME" />
+		<result property="sourceServers" column="SOURCE_SERVERS" />
+		<result property="userName" column="USER_NAME"/>
+		<result property="commandContent" column="COMMAND_CONTENT" />
+		<result property="result" column="RESULT" />
+		<result property="failureReason" column="FAILURE_REASON" />
+		<result property="domainName" column="DOMAIN_NAME" />
+	</resultMap>
+	<select id="findMmlLogTable" parameterType="com.ultrapower.flowmanage.modules.wlanLogAnalyse.vo.WlanLogParameter" resultMap="findMmlRowTable">
+		SELECT
+		     Q.*
+		 FROM
+		     (SELECT
+		            ROWNUM "NUMBER",
+		            S.*
+		        FROM
+		           (SELECT 
+		           		   T.SOURCE_SERVERS,
+		                   T.USER_NAME,
+		                   T.COMMAND_CONTENT,
+		                   T.RESULT,
+		                   T.FAILURE_REASON,
+		                   T.DOMAIN_NAME,
+		                   TO_CHAR(T.COLLECTTIME, 'YYYY/MM/DD HH24:MI') COLLECTTIME
+		              FROM
+		                   T_WLANLOG_MMLLOG T
+		             WHERE
+		                   1 = 1
+		             <if test="userName != null and userName != ''">
+		               AND T.USER_NAME LIKE '%'||#{userName}||'%'
+		             </if>
+		             <if test="result != null">
+		               AND T.RESULT IN 
+		              	<foreach item="item" index="index" collection="result" open="(" separator="," close=")">
+		            		#{item}
+		            	</foreach>
+		              </if>
+		               AND T.COLLECTTIME &gt;= TO_DATE(#{startTime}, 'YYYY-MM-DD HH24:MI')
+		      		   AND T.COLLECTTIME &lt;= TO_DATE(#{endTime}, 'YYYY-MM-DD HH24:MI')
+		               ORDER BY T.COLLECTTIME DESC
+		           ) S
+		     ) Q
+		WHERE 
+		     Q."NUMBER" &gt; (#{pageNo} - 1) * #{pageSize}
+		  AND
+			 Q."NUMBER" &lt;= #{pageNo} * #{pageSize}
+	</select>
+
+</mapper>
+

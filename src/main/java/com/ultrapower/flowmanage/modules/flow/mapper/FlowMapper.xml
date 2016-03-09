@@ -1,0 +1,2218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.flow.dao.mapper.FlowMapper">
+
+	<!-- 各地市访问电信及联通流量分析 --> 
+	<select id="findFlowOper" resultType="FsChartVo">
+		<![CDATA[
+		select t.opername,t.city label,round(t.val/1024,2) value ,t.perc lineValue from t_flow_oper_month t 
+		 where opername=#{0} 
+		AND COLLECTTIME >= #{1} AND COLLECTTIME < #{2}
+		
+		]]>
+	</select> 
+	
+	<!-- 各地市访问电信及联通流量分析(天粒度) --> 
+	<select id="findFlowOperOfDay" resultType="FsChartVo">
+		<![CDATA[
+		select t.opername,t.city label,round(t.val/1024,2) value ,t.perc lineValue from t_flow_oper_day t 
+		 where opername=#{0} 
+		AND COLLECTTIME >= #{1} AND COLLECTTIME < #{2}
+		
+		]]>
+	</select> 
+	
+	<!-- 查询业务访问关键指标详情-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="businessVisit">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusinessVisitKeyKpiDetails" resultMap="businessVisit">
+		<![CDATA[
+			 SELECT
+			       DIC.OBJECTID ID,
+			       DIC.OBJECTNAME NAME,
+			       FLOW.TYPE2 TYPE,
+			       round(FLOW.val,2) VAL,
+             	   FLOW.PERC,
+                   DIC.UNIT,
+			       FLOW.COLLECTTIME
+			   FROM
+			       (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'BUSI_IDX') DIC
+			  LEFT JOIN
+			       (SELECT F.* FROM T_FLOW_IDX_month F WHERE F.TYPE1 = 'BUSI_TYPE' AND F.TYPE2 != '全部'
+			        AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			     ON
+			       DIC.OBJECTID = FLOW.KPIID 
+			  ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+	
+	<!-- 查询业务访问关键指标详情-流量流向分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="businessVisitOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusinessVisitKeyKpiDetailsOfDay" resultMap="businessVisitOfDay">
+		<![CDATA[
+			 SELECT
+			       DIC.OBJECTID ID,
+			       DIC.OBJECTNAME NAME,
+			       FLOW.TYPE2 TYPE,
+			       round(FLOW.val,2) VAL,
+             	   FLOW.PERC,
+                   DIC.UNIT,
+			       FLOW.COLLECTTIME
+			   FROM
+			       (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'BUSI_IDX') DIC
+			  LEFT JOIN
+			       (SELECT F.* FROM T_FLOW_IDX_DAY F WHERE F.TYPE1 = 'BUSI_TYPE' AND F.TYPE2 != '全部'
+			        AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			     ON
+			       DIC.OBJECTID = FLOW.KPIID 
+			  ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+	
+	<!-- 查询资源提供关键指标详情-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="resourceProvide">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResourceProvideKeyKpiDetails" resultMap="resourceProvide">
+		<![CDATA[
+			 SELECT
+		           DIC.OBJECTID ID,
+		           DIC.OBJECTNAME NAME,
+		           FLOW.TYPE2 TYPE,
+		           FLOW.VAL,
+                   FLOW.PERC,
+                   DIC.UNIT,
+		           FLOW.COLLECTTIME
+		       FROM
+		           (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_IDX' AND T.OBJECTNAME != '网外资源利用率') DIC
+		      LEFT JOIN
+		           (SELECT F.* FROM T_FLOW_IDX F WHERE F.TYPE1 = 'RES_TYPE' 
+		            AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+		         ON
+		           DIC.OBJECTID = FLOW.KPIID
+		   ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+	
+	<!-- 查询资源提供关键指标详情-流量流向分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="resourceProvideOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResourceProvideKeyKpiDetailsOfDay" resultMap="resourceProvideOfDay">
+		<![CDATA[
+			 SELECT
+		           DIC.OBJECTID ID,
+		           DIC.OBJECTNAME NAME,
+		           FLOW.TYPE2 TYPE,
+		           FLOW.VAL,
+                   FLOW.PERC,
+                   DIC.UNIT,
+		           FLOW.COLLECTTIME
+		       FROM
+		           (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_IDX' AND T.OBJECTNAME != '网外资源利用率') DIC
+		      LEFT JOIN
+		           (SELECT F.* FROM T_FLOW_IDX_DAY F WHERE F.TYPE1 = 'RES_TYPE' 
+		            AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+		         ON
+		           DIC.OBJECTID = FLOW.KPIID
+		   ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+	
+	<!-- 全国对比 -->
+	<select id="findFlowExitCountry" resultType="FsChartVo">
+		SELECT T.EXITNAME,T.PROVINCE label
+		<if test="param==1"><!-- 双向总流量 -->
+			,T.TOTALFLOW value
+		</if>
+		<if test="param==2"><!-- 出流量 -->
+			,T.OUTFLOW value
+		</if>
+		<if test="param==3"><!-- 入流量-->
+			,T.INFLOW value
+		</if>
+		
+		 FROM  T_FLOW_EXIT_COUNTRY T
+		WHERE EXITNAME=#{extiname} AND COLLECTTIME &gt;= #{startDate} AND COLLECTTIME &lt; #{endDate}
+	</select>
+	
+	<!-- 查询业务访问网内及网外资源流量流向详表-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="resourceFlowDir">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findNetInOutResourceFlowDir" resultMap="resourceFlowDir">
+		<![CDATA[
+		   SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.TYPE2 TYPE,
+			     NVL(FLOW.VAL,'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (SELECT
+			          T1.OBJECTID,
+			          DECODE(T2.OBJECTNAME,NULL,T1.OBJECTNAME,T2.OBJECTNAME||'（'||T1.OBJECTNAME||'）') OBJECTNAME 
+			      FROM
+			           (SELECT 
+			                  T.OBJECTID,T.OBJECTNAME,T.PARENNTID
+			             FROM T_DIC T WHERE T.OBJECTTYPE = 'BUSI_DIR' AND T.OBJECTNAME NOT IN ('网外','省内资源','业务流量流向')
+			              AND T.PARENNTID NOT IN 
+			                 (SELECT D.OBJECTID FROM T_DIC D WHERE D.OBJECTTYPE = 'BUSI_DIR' AND D.OBJECTNAME IN('网外','网内他省'))
+			              ORDER BY T.OBJECTID
+			            )T1
+			      LEFT JOIN (SELECT T.OBJECTID,T.OBJECTNAME,T.PARENNTID FROM T_DIC T WHERE T.OBJECTTYPE = 'BUSI_DIR') T2
+			         ON T1.PARENNTID = T2.OBJECTID
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT F.* FROM T_FLOW_DIR F WHERE F.TYPE1 = 'BUSI_TYPE' AND F.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.DIRID
+		]]>
+	</select>
+	
+	<!-- 业务访问网内他省IDC流量流向详表-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="netInOtherProvinceIDC">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findNetInOtherProvinceIDCFlowDir" resultMap="netInOtherProvinceIDC">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.TYPE2 TYPE,
+			     NVL(FLOW.VAL,'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME,T.PARENNTID
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'BUSI_DIR' AND T.OBJECTNAME != '全国其他IDC'
+			        AND T.PARENNTID = (SELECT D.OBJECTID FROM T_DIC D WHERE D.OBJECTTYPE = 'BUSI_DIR' AND D.OBJECTNAME = '网内他省')
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT F.* FROM T_FLOW_DIR F WHERE F.TYPE1 = 'BUSI_TYPE' AND F.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.DIRID
+		]]>
+	</select>
+	
+	<!-- 本省资源节点提供流量流向详表-流量流向分析表格数据  -->
+	<resultMap type="java.util.HashMap" id="nodeFlowDir">
+		<result property="id" column="ID"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResourceNodeFlowDir" resultMap="nodeFlowDir">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.PARENTNAME,
+			     DIC.CHILDNAME,
+			     FLOW.TYPE2 TYPE,
+			     NVL(FLOW.VAL,'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (SELECT
+			          T1.OBJECTID,
+			          DECODE(T2.OBJECTNAME,NULL,T1.OBJECTNAME,T2.OBJECTNAME) PARENTNAME,
+			          T1.OBJECTNAME CHILDNAME
+			      FROM
+			           (SELECT 
+			                  T.OBJECTID,T.OBJECTNAME,T.PARENNTID
+			             FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_DIR' AND T.OBJECTNAME NOT IN ('网外','本省业务')
+			              AND T.PARENNTID NOT IN 
+			                 ((SELECT D.OBJECTID FROM T_DIC D WHERE D.OBJECTTYPE = 'RES_DIR' AND D.OBJECTNAME = '网内他省'),-1)
+			              ORDER BY T.OBJECTID
+			            )T1
+			      LEFT JOIN (SELECT T.OBJECTID,T.OBJECTNAME,T.PARENNTID FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_DIR' AND T.PARENNTID != -1) T2
+			         ON T1.PARENNTID = T2.OBJECTID
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT F.* FROM T_FLOW_DIR F WHERE F.TYPE1 = 'RES_TYPE' AND F.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.DIRID
+		]]>
+	</select>
+	
+	<!-- 本省IDC资源节点提供给网内他省IDC流量详表-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="otherProvinceIDCFlow">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findOtherProvinceIDCFlow" resultMap="otherProvinceIDCFlow">
+		
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.TYPE2 TYPE,
+			     NVL(FLOW.VAL,'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME,T.PARENNTID
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_DIR' AND T.OBJECTNAME != '全国其他IDC'
+			        AND T.PARENNTID = (SELECT D.OBJECTID FROM T_DIC D WHERE D.OBJECTTYPE = 'RES_DIR' AND D.OBJECTNAME = '网内他省')
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT F.* FROM
+			     /*<!-- <choose>
+			     <when test="2 == 'month'">  -->T_FLOW_DIR_month<!-- </when>
+			     <otherwise> T_FLOW_DIR_day</otherwise>
+			     
+			     </choose> -->*/
+			       F WHERE F.TYPE1 = 'RES_TYPE' AND F.TYPE2 != '全部'
+			    <![CDATA[  AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.DIRID
+		]]>
+	</select>
+	
+	<!-- 各地市访问电信及联通流量分析-流量流向分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="ctccAndCuccFlow">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findCityVisitCTCCAndCUCCFlow" resultMap="ctccAndCuccFlow">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.OPERNAME TYPE,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'CITY'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM t_flow_oper_month T WHERE T.AREA = '市级'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.CITYID
+		]]>
+	</select>
+	
+	<!-- 各地市访问电信及联通流量分析-流量流向分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="ctccAndCuccFlowOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findCityVisitCTCCAndCUCCFlowOfDay" resultMap="ctccAndCuccFlowOfDay">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.OPERNAME TYPE,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'CITY'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_OPER_DAY T WHERE T.AREA = '市级'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.CITYID
+		]]>
+	</select>
+
+	<!--
+	 	流量出口树形表格展示，不调用分页拦截器的SQL查询，created by zhengWei
+		<select id="getFlowExit" resultType="FlowExitTree">
+			SELECT D.OBJECTNAME NAME, D.OBJECTID ID, D.PARENNTID PARENTID, D.LEV, D.ORDERID,
+			E1.INFLOW, E1.OUTFLOW, E1.TOTALFLOW, E1.TOTALFLOW_PERC, to_char(E1.COLLECTTIME, 'yyyy-MM-dd') COLLECTTIME 
+			FROM T_FLOW_EXIT_DAY E1
+			INNER JOIN 
+			(
+			    SELECT COLLECTTIME FROM 
+			    (SELECT E2.COLLECTTIME FROM  T_FLOW_EXIT_DAY E2
+			    GROUP BY E2.COLLECTTIME ORDER BY E2.COLLECTTIME)
+			    WHERE  3 > ROWNUM AND ROWNUM > 0
+			) TEMP ON E1.COLLECTTIME = TEMP.COLLECTTIME
+			INNER JOIN T_DIC D ON E1.EXITID = D.OBJECTID
+			ORDER BY E1.COLLECTTIME
+		</select> 
+	-->
+	
+	<!--
+		 流量出口默认调用拦截器分页 created by zhengWei
+		分页拦截器：com.ultrapower.flowmanage.common.utils.PageUtil.PagePlugin
+	-->
+	<resultMap type="java.util.HashMap" id="collecttimeMap">
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="getFlowExitPage" resultMap="collecttimeMap">
+		<![CDATA[
+		SELECT to_char(E2.COLLECTTIME, 'yyyy-MM-dd') COLLECTTIME
+		FROM T_FLOW_EXIT_DAY E2 WHERE COLLECTTIME >= #{startTime} AND COLLECTTIME < #{endTime}
+		GROUP BY to_char(E2.COLLECTTIME, 'yyyy-MM-dd')
+		]]>
+	</select>
+	
+	<select id="getFlowExit" resultType="FlowExitTree">
+		SELECT D.OBJECTNAME NAME, D.OBJECTID ID, D.PARENNTID PARENTID, D.LEV, D.ORDERID,
+        NVL(round(E1.INFLOW/1024,2),0) INFLOW, NVL(round(E1.OUTFLOW/1024,2),0) OUTFLOW, NVL(round(E1.TOTALFLOW/1024,2),0) TOTALFLOW, NVL(E1.TOTALFLOW_PERC,0) TOTALFLOW_PERC, to_char(E1.COLLECTTIME, 'yyyy-MM-dd') COLLECTTIME 
+		FROM T_FLOW_EXIT_DAY E1
+		INNER JOIN T_DIC D ON E1.EXITID = D.OBJECTID
+		WHERE to_char(E1.COLLECTTIME, 'yyyy-MM-dd') IN
+	   	<foreach item="collecttime" collection="collecttimeList" open="(" separator="," close=")">
+        	#{collecttime}
+        </foreach>
+        AND E1.BUSINAME = #{busiStr}
+		ORDER BY E1.COLLECTTIME
+	</select>
+	
+	<select id="getExitRootNode" resultType="FlowExitTree">
+		SELECT OBJECTNAME NAME, OBJECTID ID, PARENNTID PARENTID, LEV, ORDERID,
+		NULL INFLOW, NULL OUTFLOW, NULL TOTALFLOW, NULL TOTALFLOW_PERC, NULL COLLECTTIME
+		FROM T_DIC WHERE OBJECTTYPE = 'FLOW_EXIT' AND PARENNTID = -1
+	</select>
+	
+	<!-- 业务访问及资源提供流量成分构成-流量成分分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="busiVisitAndRes">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusiVisitResFlowIngredientForm" resultMap="busiVisitAndRes">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.DIRNAME CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_MONTH T WHERE T.TYPE2 IN ('全部','IDC')
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 业务访问及资源提供流量成分构成-流量成分分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="busiVisitAndResOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusiVisitResFlowIngredientFormOfDay" resultMap="busiVisitAndResOfDay">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.DIRNAME CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_DAY T WHERE T.TYPE2 IN ('全部','IDC')
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME <= #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 业务访问成分构成详表(省网出口)-流量成分分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="busiVisitIngredientFormInfo">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusiVisitIngredientFormInfo" resultMap="busiVisitIngredientFormInfo">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.DIRNAME CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_MONTH T WHERE T.TYPE1 = 'BUSI_TYPE' AND T.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 业务访问成分构成详表(省网出口)-流量成分分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="busiVisitIngredientFormInfoOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findBusiVisitIngredientFormInfoOfDay" resultMap="busiVisitIngredientFormInfoOfDay">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     FLOW.DIRNAME CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'   
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_DAY T WHERE T.TYPE1 = 'BUSI_TYPE' AND T.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 资源节点内容提供成分详表（省网出口）-流量成分分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="resourceNodeIngredientInfo">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResourceNodeIngredientInfo" resultMap="resourceNodeIngredientInfo">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     (SELECT T.OBJECTNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_ING_DIR' AND T.OBJECTID = FLOW.DIRID) CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'  
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_MONTH T WHERE T.TYPE1 = 'RES_TYPE' AND T.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 资源节点内容提供成分详表（省网出口）-流量成分分析表格数据(天粒度) -->
+	<resultMap type="java.util.HashMap" id="resourceNodeIngredientInfoOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="childname" column="CHILDNAME"/>
+		<result property="parentname" column="PARENTNAME"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResourceNodeIngredientInfoOfDay" resultMap="resourceNodeIngredientInfoOfDay">
+		<![CDATA[
+			SELECT    
+			     DIC.OBJECTID ID,
+			     DIC.OBJECTNAME NAME,
+			     (SELECT T.OBJECTNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_ING_DIR' AND T.OBJECTID = FLOW.DIRID) CHILDNAME,
+			     FLOW.TYPE2 PARENTNAME,
+			     NVL(round(FLOW.VAL/1024/1024,2),'0') VAL,
+			     NVL(FLOW.PERC,'0') PERC,
+			     FLOW.COLLECTTIME
+			 FROM
+			    (
+			     SELECT 
+			            T.OBJECTID,T.OBJECTNAME
+			       FROM T_DIC T WHERE T.OBJECTTYPE = 'ING_IDX'  
+			     ORDER BY T.OBJECTID   
+			     ) DIC
+			 LEFT JOIN
+			     (SELECT T.* FROM T_FLOW_INGREDIENT_DAY T WHERE T.TYPE1 = 'RES_TYPE' AND T.TYPE2 != '全部'
+			      AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+			   ON
+			     DIC.OBJECTID = FLOW.KPIID
+			     ORDER BY FLOW.DIRNAME
+		]]>
+	</select>
+	
+	<!-- 流量性能分析-流量性能分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="flowPropertyAnalyze">
+		<result property="exitid" column="EXITID"/>
+		<result property="exitname" column="EXITNAME"/>
+		<result property="kpiid" column="KPIID"/>
+		<result property="kpiname" column="KPINAME"/>
+		<result property="val" column="VAL"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowPropertyAnalyze" resultMap="flowPropertyAnalyze">
+		<![CDATA[
+			 SELECT 
+		        T2.EXITID,
+		        T2.EXITNAME,
+		        T1.OBJECTID KPIID,
+		        T1.OBJECTNAME KPINAME,
+		        round(T2.val,2) VAL,
+		        T2.COLLECTTIME       
+		  	FROM
+		        (SELECT T.OBJECTID, T.OBJECTNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'FLOW_PM_IDX') T1
+			LEFT JOIN(
+				SELECT 
+		            F.EXITID,
+		            F.EXITNAME,	
+		            F.KPIID,
+					      case when kpiid = 263 then F.VAL else  round(f.val/1024, 2) end val,
+					      F.COLLECTTIME 
+					FROM 
+					     T_FLOW_PM_DAY F 
+					WHERE 
+					     F.EXITID = #{0}
+					AND 
+					     F.COLLECTTIME >= #{1} 
+					AND 
+					  	 F.COLLECTTIME < #{2}
+					  ORDER BY TRUNC(F.COLLECTTIME,'DD')
+			) T2
+			ON T1.OBJECTID = T2.KPIID
+		]]>
+	</select>
+	
+	<!-- 流量性能分析-根据页码查询流量性能分析表格数据 -->
+	<resultMap type="java.util.HashMap" id="flowPropertyAnalyzeByPageNum">
+		<result property="exitid" column="EXITID"/>
+		<result property="exitname" column="EXITNAME"/>
+		<result property="kpiid" column="KPIID"/>
+		<result property="kpiname" column="KPINAME"/>
+		<result property="val" column="VAL"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+		<result property="r" column="R"/>
+	</resultMap>
+	<select id="findFlowPropertyAnalyzeByPagination" resultMap="flowPropertyAnalyzeByPageNum">
+	
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(partition by EXITID,EXITNAME,KPIID,KPINAME ORDER BY COLLECTTIME) r
+			from (
+		</if>
+		<![CDATA[
+		
+		
+		  SELECT B.EXITID,
+	         B.EXITNAME,
+	         A.OBJECTID KPIID,
+	         A.OBJECTNAME  KPINAME,
+	          round(case when b.kpiid = 263 then B.val else b.val/1024 end, 2) VAL,
+	         to_char(B.COLLECTTIME,'yyyy/mm/dd') COLLECTTIME
+    	  FROM (SELECT OBJECTID, OBJECTNAME
+	            FROM T_DIC T
+	           WHERE T.OBJECTTYPE = 'FLOW_PM_IDX') A
+   		  /*LEFT*/ JOIN (SELECT *
+                 	FROM T_FLOW_PM_DAY
+                	WHERE EXITID = #{id} 
+                	AND
+                		COLLECTTIME >= #{nowmonfirstday} 
+					AND 
+					  	COLLECTTIME < #{nextmonfirstday}
+                  	) B
+     	  ON A.OBJECTID = B.KPIID 
+  		 
+	 	
+		]]>
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p.r > (${pageNo}-1)*${pageSize}) q where r <= ${pageNo}*${pageSize} order by r]]>
+		</if>
+	</select>
+
+<!-- 	业务类型名称查询  -->
+	<resultMap type="java.util.HashMap" id="BusinessTypeName">
+		<result property="id" column="ID"/>
+		<result property="keyId" column="KEYID"/>
+		<result property="keyName" column="KEYNAME"/>
+	</resultMap>
+	<select id="findBusinessTypeName" resultMap="BusinessTypeName">
+		SELECT ROWNUM ID, T.OBJECTID KEYID,T.OBJECTNAME KEYNAME FROM T_DIC T WHERE T.OBJECTTYPE = #{type}
+	</select>
+<!-- 	流量方向拓扑部分数据查询 -->
+	<select id="getFlowTable" resultType="Tree">
+	 <![CDATA[
+	select name,
+	        id,/* rn,*/
+	       parentid,
+	       lev,
+	       unit,
+	       type,
+	       
+	      /* r,*/
+	       sum(score) score,
+	       sum(val) val
+	  from (select case
+	                 when rn > 10 and parentid = (select objectid
+                                    from T_DIC
+                                   where objecttype = #{flowtype}
+                                     and objectname = '网内他省') and lev = 3 then
+	                  '全国其他'
+	                 else
+	                  name
+	               end name,
+	               score,
+	               val,
+			 		case
+			                 when rn > 10 and
+			                      parentid = (select objectid
+			                                    from T_DIC
+			                                   where objecttype = #{flowtype}
+			                                     and objectname = '网内他省') and lev = 3 then
+			                  99999
+			                 else
+			                  id
+			               end id,
+	               parentid,
+	               lev,
+	               unit,
+	               type,
+	               rn,
+	               case
+	                 when rn > 10 and parentid = (select objectid
+                                    from T_DIC
+                                   where objecttype = #{flowtype}
+                                     and objectname = '网内他省') and lev = 3 then
+	                  11
+	                 else
+	                  rn
+	               end r
+	          from (select o.*,
+	                       row_number() over(partition by PARENTID order by VAL desc nulls last) rn
+	                
+	                  from (
+	                        
+	                        select D.OBJECTNAME NAME,
+	                                I.PERC SCORE,
+	                                round(i.val / 1024, 2) VAL,
+	                                D.OBJECTID ID,
+	                                D.PARENNTID PARENTID,
+	                                D.LEV,
+	                                D.UNIT,
+	                                D.OBJECTTYPE TYPE
+	                          from (select *
+	                                   from T_DIC
+	                                  where objectid != 1518	and parenntid != 1538
+	                                    and objecttype = #{flowtype}  and objectname != '陕西') d
+	                          left join (select *
+	                                       from t_flow_dir_month
+	                                      where type1 = #{brtype}
+	                                        and type2 = #{labeltype}
+	                                        and COLLECTTIME >=#{getmonthfirstday}
+	                                        AND COLLECTTIME <#{nextmonthfirstday}) i
+	                            on d.objectid = i.dirid) o) p)
+	 group by name, id,/* rn,*/ parentid, lev, unit, type, r			
+		]]>
+	</select>
+	
+<!-- 	流量方向拓扑部分数据查询(天粒度) -->
+	<select id="getFlowTableOfDay" resultType="Tree">
+	 <![CDATA[
+	select name,
+	        id,/*rn,*/
+	       parentid,
+	       lev,
+	       unit,
+	       type,
+	       
+	      /* r,*/
+	       sum(score) score,
+	       sum(val) val
+	  from (select case
+	                 when rn > 10 and parentid = (select objectid
+                                    from T_DIC
+                                   where objecttype = #{flowtype}
+                                     and objectname = '网内他省') and lev = 3 then
+	                  '全国其他'
+	                 else
+	                  name
+	               end name,
+	               score,
+	               val,
+	               case
+			                 when rn > 10 and
+			                      parentid = (select objectid
+			                                    from T_DIC
+			                                   where objecttype = #{flowtype}
+			                                     and objectname = '网内他省') and lev = 3 then
+			                  99999
+			                 else
+			                  id
+			               end id,
+	               parentid,
+	               lev,
+	               unit,
+	               type,
+	               rn,
+	               case
+	                 when rn > 10 and parentid = (select objectid
+                                    from T_DIC
+                                   where objecttype = #{flowtype}
+                                     and objectname = '网内他省') and lev = 3 then
+	                  11
+	                 else
+	                  rn
+	               end r
+	          from (select o.*,
+	                       row_number() over(partition by PARENTID order by VAL desc nulls last) rn
+	                
+	                  from (
+	                        
+	                        select D.OBJECTNAME NAME,
+	                                I.PERC SCORE,
+	                                round(i.val / 1024, 2) VAL,
+	                                D.OBJECTID ID,
+	                                D.PARENNTID PARENTID,
+	                                D.LEV,
+	                                D.UNIT,
+	                                D.OBJECTTYPE TYPE
+	                          from (select *
+	                                   from T_DIC
+	                                  where objectid != 1518	and parenntid != 1538
+	                                    and objecttype = #{flowtype}  and objectname != '陕西') d
+	                          left join (select *
+	                                       from t_flow_dir_day
+	                                      where type1 = #{brtype}
+	                                        and type2 = #{labeltype}
+	                                        and COLLECTTIME >=#{getmonthfirstday}
+	                                        AND COLLECTTIME <#{nextmonthfirstday}) i
+	                            on d.objectid = i.dirid) o) p)
+	 group by name, id, /*rn,*/ parentid, lev, unit, type, r		
+		]]>
+	</select>
+	
+	<!-- 业务访问流量成分构成 -->
+	<select id="findFlowIngredient" resultType="FsChartVo">
+	 <![CDATA[
+		SELECT  
+			  T.DIRNAME SERIESNAME,
+              (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.KPIID) LABEL,
+              NVL(round(T.VAL/1024/1024,2),0) VAL ,
+              NVL(T.PERC,0) VALUE
+	   	  FROM T_FLOW_INGREDIENT_MONTH T
+	   	 WHERE T.TYPE1=#{0}
+	   	   AND T.TYPE2=#{1}
+	   	   AND COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+	   	]]>
+	</select>
+	
+	<!-- 业务访问流量成分构成(天粒度) -->
+	<select id="findFlowIngredientOfDay" resultType="FsChartVo">
+	 <![CDATA[
+		SELECT  
+			  T.DIRNAME SERIESNAME,
+              (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.KPIID) LABEL,
+              NVL(round(T.VAL/1024/1024,2),0) VAL ,
+              NVL(T.PERC,0) VALUE
+	   	  FROM T_FLOW_INGREDIENT_DAY T
+	   	 WHERE T.TYPE1=#{0}
+	   	   AND T.TYPE2=#{1}
+	   	   AND COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+	   	]]>
+	</select>
+	
+	<!-- 业务访问流量成分构成 -->
+	<resultMap type="java.util.HashMap" id="IngerdientByDirName">
+		<result property="kpiName" column="KPINAME"/>
+		<result property="ww" column="WW"/>
+		<result property="wnts" column="WNTS"/>
+	</resultMap>
+	<select id="getFlowIngerdientByDirName" resultMap="IngerdientByDirName">
+	 
+	 	select 
+		 	A.KPINAME,
+		 	NVL(A.VAL,0) WW,
+		 	NVL(B.VAL,0) WNTS
+	 	from
+		(SELECT  
+			  T.KPINAME KPINAME,
+              sum(NVL(round(T.VAL/1024/1024,2),0)) VAL
+		   	FROM T_FLOW_INGREDIENT_MONTH T
+		   	 WHERE T.TYPE1=#{type1}
+		   	   AND T.TYPE2=#{type2}
+		   	   AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}
+		   	   AND T.DIRNAME = '网外' 
+	   	  group by T.KPINAME)A
+		Left join
+	   	  (SELECT  
+			   T.KPINAME KPINAME,
+               sum(NVL(round(T.VAL/1024/1024,2),0)) VAL
+		   	 FROM T_FLOW_INGREDIENT_MONTH T
+		   	 WHERE T.TYPE1=#{type1}
+		   	   AND T.TYPE2=#{type2}
+		   	   AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}
+		   	   <if test="type1=='BUSI_TYPE'">
+		   	      AND T.DIRNAME = '网内他省'
+		   	   </if>
+		   	   <if test="type1=='RES_TYPE'">
+		   	      AND T.DIRNAME = '网内'
+		   	   </if>
+		   	  group by T.KPINAME)B
+	   	  on A.KPINAME = B.KPINAME
+	   	
+	</select>
+	
+	<!-- 业务访问流量成分构成(天粒度) -->
+	<resultMap type="java.util.HashMap" id="IngerdientByDirNameOfDay">
+		<result property="kpiName" column="KPINAME"/>
+		<result property="ww" column="WW"/>
+		<result property="wnts" column="WNTS"/>
+	</resultMap>
+	<select id="getFlowIngerdientByDirNameOfDay" resultMap="IngerdientByDirNameOfDay">
+	 
+	 	select 
+		 	A.KPINAME KPINAME,
+		 	NVL(A.VAL,0) WW,
+		 	NVL(B.VAL,0) WNTS
+	 	from
+		(SELECT  
+			  T.KPINAME KPINAME,
+              sum(NVL(round(T.VAL/1024/1024,2),0)) VAL
+		   	FROM T_FLOW_INGREDIENT_DAY T
+		   	 WHERE T.TYPE1=#{type1}
+		   	   AND T.TYPE2=#{type2}
+		   	   AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}
+		   	   AND T.DIRNAME = '网外' 
+	   	  group by T.KPINAME)A
+		Left join
+	   	  (SELECT  
+			   T.KPINAME KPINAME,
+               sum(NVL(round(T.VAL/1024/1024,2),0)) VAL
+		   	 FROM T_FLOW_INGREDIENT_DAY T
+		   	 WHERE T.TYPE1=#{type1}
+		   	   AND T.TYPE2=#{type2}
+		   	   AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}
+		   	   <if test="type1=='BUSI_TYPE'">
+		   	      AND T.DIRNAME = '网内他省'
+		   	   </if>
+		   	   <if test="type1=='RES_TYPE'">
+		   	      AND T.DIRNAME = '网内'
+		   	   </if>
+		   	  group by T.KPINAME)B
+	   	  on A.KPINAME = B.KPINAME
+	   	
+	</select>
+
+	<!-- 不同访问类型的流量成分构成(饼图) -->
+	<select id="getFlowIngerdientOhtChart" resultType="FsChartVo">
+
+	 	<![CDATA[
+			SELECT 
+			      T.KPINAME LABEL,
+			      T.PERC VALUE  
+			  FROM 
+			      T_FLOW_INGREDIENT_OTH T
+			 WHERE 
+			      T.INGID = #{0}
+			   AND 
+			      COLLECTTIME >= #{1} 
+			   AND 
+			      COLLECTTIME < #{2}
+
+	  	]]>
+	</select>
+	<!-- 不同访问类型的流量成分构成(饼图)天粒度 -->
+	<select id="getFlowIngerdientOhtChartOfDay" resultType="FsChartVo">
+
+	 	<![CDATA[
+			SELECT 
+			      T.KPINAME LABEL,
+			      T.PERC VALUE  
+			  FROM 
+			      T_FLOW_INGREDIENT_OTH_DAY T
+			 WHERE 
+			      T.INGID = #{0}
+			   AND 
+			      COLLECTTIME >= #{1} 
+			   AND 
+			      COLLECTTIME < #{2}
+
+	  	]]>
+	</select>
+
+	<!-- 不同访问类型的流量成分构成(表格)-流量成分分析 -->
+	<resultMap type="java.util.HashMap" id="flowIngerdientTable">
+		<result property="ingid" column="INGID"/>
+		<result property="ingtype" column="INGTYPE"/>
+		<result property="kpiname" column="KPINAME"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowIngerdientTable" resultMap="flowIngerdientTable">
+		<![CDATA[
+			 SELECT
+			       T.INGID,
+			       T.INGTYPE,
+			       T.KPINAME,
+			       NVL(T.PERC,0) PERC,
+       			   T.COLLECTTIME
+			   FROM 
+			       T_FLOW_INGREDIENT_OTH T
+			  WHERE
+			       T.COLLECTTIME >= #{0}
+			    AND
+			       T.COLLECTTIME < #{1}
+			    ORDER BY T.INGID
+		]]>
+	</select>
+	
+	<!-- 不同访问类型的流量成分构成(表格)-流量成分分析(天粒度) -->
+	<resultMap type="java.util.HashMap" id="flowIngerdientTableOfDay">
+		<result property="ingid" column="INGID"/>
+		<result property="ingtype" column="INGTYPE"/>
+		<result property="kpiname" column="KPINAME"/>
+		<result property="perc" column="PERC"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowIngerdientTableOfDay" resultMap="flowIngerdientTableOfDay">
+		<![CDATA[
+			 SELECT
+			       T.INGID,
+			       T.INGTYPE,
+			       T.KPINAME,
+			       NVL(T.PERC,0) PERC,
+       			   T.COLLECTTIME
+			   FROM 
+			       T_FLOW_INGREDIENT_OTH_DAY T
+			  WHERE
+			       T.COLLECTTIME >= #{0}
+			    AND
+			       T.COLLECTTIME < #{1}
+			    ORDER BY T.INGID
+		]]>
+	</select>
+	
+	<!-- 地市对比-流量出口分析 -->
+	<resultMap type="java.util.HashMap" id="flowExitCityContrast">
+		<result property="city" column="CITY"/>
+		<result property="inflow" column="INFLOW"/>
+		<result property="outflow" column="OUTFLOW"/>
+		<result property="totalflow" column="TOTALFLOW"/>
+	</resultMap>
+	<select id="findFlowExitCityContrast" resultMap="flowExitCityContrast">
+		<![CDATA[
+		    SELECT
+		          D.OBJECTNAME CITY,
+		          NVL(F.INFLOW,0) INFLOW,
+		          NVL(F.OUTFLOW,0) OUTFLOW,
+		          NVL(F.TOTALFLOW,0) TOTALFLOW
+		      FROM
+		          (SELECT T.OBJECTID,T.OBJECTNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'CITY') D
+		 LEFT JOIN
+		         (SELECT
+		                T.CITYID,
+		                T.CITY,
+		                T.INFLOW,
+		                T.OUTFLOW,
+		                T.TOTALFLOW
+		            FROM
+		                T_FLOW_EXIT_CITY T
+		           WHERE
+		                T.EXITID = #{0}
+		             AND
+		                T.AREA = '市级'
+		             AND
+		                T.COLLECTTIME >= #{1}
+		             AND 
+		                T.COLLECTTIME < #{2}
+		         ) F
+		       ON 
+		         D.OBJECTID = F.CITYID
+		]]>
+	</select>
+	
+	<!-- 地市对比.流量出口名称-流量出口分析 -->
+	<resultMap type="java.util.HashMap" id="flowExitName">
+		<result property="id" column="ID"/>
+		<result property="flowExitName" column="FLOWEXITNAME"/>
+	</resultMap>
+	<select id="findFlowExitName" resultMap="flowExitName">
+		<![CDATA[
+			 SELECT 
+			       T.OBJECTID ID,
+			       T.OBJECTNAME FLOWEXITNAME
+			   FROM 
+			       T_DIC T 
+			  WHERE  
+			       T.OBJECTTYPE = 'FLOW_EXIT' 
+			    AND 
+			       T.PARENNTID != -1 
+			    AND 
+			       T.OBJECTID NOT IN (SELECT 
+			                                T.OBJECTID 
+			                            FROM 
+			                                T_DIC T 
+			                           WHERE 
+			                                T.OBJECTTYPE = 'FLOW_EXIT' 
+			                             AND 
+			                                (INSTR(T.OBJECTNAME,'CMNET')>0 OR INSTR(T.OBJECTNAME,'CMNET')>0 OR INSTR(T.OBJECTNAME,'中国铁通')>0)
+			                           )
+		]]>
+	</select>
+	<!-- 资源提供关键指标分析 -->
+		<resultMap type="java.util.HashMap" id="resourceProvideKPI">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResKPI" resultMap="resourceProvideKPI">
+		<![CDATA[
+			 SELECT
+		           DIC.OBJECTID ID,
+		           DIC.OBJECTNAME NAME,
+		           FLOW.TYPE2 TYPE,
+		           NVL(FLOW.VAL,0) VAL,
+                   NVL(FLOW.PERC,0) PERC,
+                   DIC.UNIT,
+		           FLOW.COLLECTTIME
+		       FROM
+		           (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_IDX' ) DIC
+		      LEFT JOIN
+		           (SELECT F.* FROM T_FLOW_IDX_month F WHERE F.TYPE1 = 'RES_TYPE' 
+		            AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+		         ON
+		           DIC.OBJECTID = FLOW.KPIID
+		   ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+	
+	<!-- 资源提供关键指标分析(天粒度) -->
+		<resultMap type="java.util.HashMap" id="resourceProvideKPIOfDay">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+		<result property="type" column="TYPE"/>
+		<result property="val" column="VAL"/>
+		<result property="perc" column="PERC"/>
+		<result property="unit" column="UNIT"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findResKPIOfDay" resultMap="resourceProvideKPIOfDay">
+		<![CDATA[
+			 SELECT
+		           DIC.OBJECTID ID,
+		           DIC.OBJECTNAME NAME,
+		           FLOW.TYPE2 TYPE,
+		           NVL(FLOW.VAL,0) VAL,
+                   NVL(FLOW.PERC,0) PERC,
+                   DIC.UNIT,
+		           FLOW.COLLECTTIME
+		       FROM
+		           (SELECT T.OBJECTID,T.OBJECTNAME,T.UNIT FROM T_DIC T WHERE T.OBJECTTYPE = 'RES_IDX' ) DIC
+		      LEFT JOIN
+		           (SELECT F.* FROM T_FLOW_IDX_DAY F WHERE F.TYPE1 = 'RES_TYPE' 
+		            AND COLLECTTIME >= #{0} AND COLLECTTIME < #{1}) FLOW
+		         ON
+		           DIC.OBJECTID = FLOW.KPIID
+		   ORDER BY DIC.OBJECTID
+		]]>
+	</select>
+
+	<!-- 出口链路流量概览-流量出口分析 -->
+	<select id="findFlowExitLinkOverview" resultType="FlowExitLinkVo">
+		<![CDATA[
+			SELECT
+			       D.EXITID,
+			       D.EXITNAME,
+			       D.PARENNTID,
+			       D.LEV,
+			       NVL(round(F.INFLOW/1024,2),0) INFLOW,
+	               NVL(round(F.OUTFLOW/1024,2),0) OUTFLOW,
+	               NVL(round(F.TOTALFLOW/1024,2),0) TOTALFLOW,
+	               NVL(F.INFLOW_PERC,0) INFLOWPERC,
+	               NVL(F.OUTFLOW_PERC,0) OUTFLOWPERC,
+	               NVL(F.TOTALFLOW_PERC,0) TOTALFLOWPERC,
+			       F.COLLECTTIME
+			  FROM
+			       (SELECT 
+                   T.OBJECTID EXITID,
+                   T.OBJECTNAME EXITNAME,
+                   T.PARENNTID,
+                   T.LEV
+		               FROM 
+		                   T_DIC T 
+		              WHERE  
+		                   T.OBJECTTYPE = 'FLOW_EXIT' 
+		                AND 
+		                  parenntid not in (1707,1708,1709,1710)
+		           ORDER BY T.LEV,T.ORDERID
+			       ) D
+			 LEFT JOIN
+			      (
+			        SELECT 
+			            T.*
+			        FROM
+			            T_FLOW_EXIT_MONTH T
+			       WHERE
+			          
+			            T.COLLECTTIME >= #{0}
+			         AND 
+			            T.COLLECTTIME < #{1}
+			         AND 
+			            T.BUSINAME = #{2}
+			      ) F
+			   ON
+			      D.EXITID = F.EXITID
+		]]>
+	</select>
+
+	<!-- 出口链路流量概览-流量出口分析(天粒度) -->
+	<select id="findFlowExitLinkOverviewOfDay" resultType="FlowExitLinkVo">
+		<![CDATA[
+			SELECT
+			       D.EXITID,
+			       D.EXITNAME,
+			       D.PARENNTID,
+			       D.LEV,
+			       NVL(F.INFLOW,0) INFLOW,
+	               NVL(F.OUTFLOW,0) OUTFLOW,
+	               NVL(F.TOTALFLOW,0) TOTALFLOW,
+	               NVL(F.INFLOW_PERC,0) INFLOWPERC,
+	               NVL(F.OUTFLOW_PERC,0) OUTFLOWPERC,
+	               NVL(F.TOTALFLOW_PERC,0) TOTALFLOWPERC,
+			       F.COLLECTTIME
+			  FROM
+			       (SELECT 
+			             T.OBJECTID EXITID,
+			             T.OBJECTNAME EXITNAME,
+			             T.PARENNTID,
+			             T.LEV
+			         FROM 
+			             T_DIC T 
+			        WHERE  
+			             T.OBJECTTYPE = 'FLOW_EXIT' 
+			          AND 
+			             T.PARENNTID != -1 
+			          AND 
+			             T.OBJECTID 
+			       NOT IN (
+			       		   SELECT T.OBJECTID FROM T_DIC T WHERE T.OBJECTTYPE = 'FLOW_EXIT' AND 
+			               (INSTR(T.OBJECTNAME,'CMNET')>0 OR INSTR(T.OBJECTNAME,'CMNET')>0 OR INSTR(T.OBJECTNAME,'中国铁通')>0)
+			               )
+			     ORDER BY T.LEV
+			       ) D
+			 LEFT JOIN
+			      (
+			        SELECT 
+			            T.*
+			        FROM
+			            T_FLOW_EXIT_CITY_DAY T
+			       WHERE
+			            T.AREA = '全省'
+			         AND 
+			            T.COLLECTTIME >= #{0}
+			         AND 
+			            T.COLLECTTIME < #{1}
+			      ) F
+			   ON
+			      D.EXITID = F.EXITID
+		]]>
+	</select>
+	
+	<!-- 性能指标概览 -->
+	<resultMap type="java.util.HashMap" id="findPerformanceTable">
+		<result property="KPIID" column="KPIID"/>
+		<result property="exitname" column="exitname"/>
+		<result property="kpiname" column="kpiname"/>
+		<result property="val" column="val"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findPerformanceView" resultMap="findPerformanceTable">
+		<![CDATA[
+			SELECT
+	             T.EXITID,
+	             T.EXITNAME,
+	             T.KPINAME,
+	             NVL(T.VAL,0) VAL,
+	             T.COLLECTTIME
+         	FROM 
+             	T_FLOW_PM_DAY T
+        	WHERE
+            	T.EXITID=#{0} AND
+             	T.COLLECTTIME = (SELECT MAX(COLLECTTIME) FROM T_FLOW_PM_DAY)
+		]]>
+	</select>
+	
+	<!-- 不同访问类型的流量成分构成.流量详细分类表格-流量成分分析 -->
+	<resultMap type="java.util.HashMap" id="detailClass">
+		<result property="ingId" column="INGID"/>
+		<result property="ingType" column="INGTYPE"/>
+		<result property="objectName" column="OBJECTNAME"/>
+		<result property="groupFlow" column="GROUPFLOW"/>
+		<result property="thirdpartyFlow" column="THIRDPARTYFLOW"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowDetailClass" resultMap="detailClass">
+		<![CDATA[
+		    SELECT
+		    	 F.INGID,
+		         F.INGTYPE,
+		         D.OBJECTNAME,
+		         NVL(F.GROUPFLOW,0) GROUPFLOW,
+         		 NVL(F.THIRDPARTYFLOW,0) THIRDPARTYFLOW,
+		         F.COLLECTTIME
+		     FROM
+		         (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'DETCLASS_ING_IDX') D
+		 LEFT JOIN
+		         (SELECT 
+		                T.*
+		            FROM
+		                T_FLOW_INGREDIENT_DETAILCLASS T
+		           WHERE
+		                T.COLLECTTIME >= #{0} 
+		             AND
+		                T.COLLECTTIME < #{1}
+		             AND T.INGTYPE != '省级出口'
+		             ORDER BY T.INGID
+		          ) F
+		        ON D.OBJECTID = F.KPIID
+		]]>
+	</select>
+	
+	<!-- 不同访问类型的流量成分构成.流量详细分类表格-流量成分分析(天粒度) -->
+	<resultMap type="java.util.HashMap" id="detailClassOfDay">
+		<result property="ingId" column="INGID"/>
+		<result property="ingType" column="INGTYPE"/>
+		<result property="objectName" column="OBJECTNAME"/>
+		<result property="groupFlow" column="GROUPFLOW"/>
+		<result property="thirdpartyFlow" column="THIRDPARTYFLOW"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowDetailClassOfDay" resultMap="detailClassOfDay">
+		<![CDATA[
+		    SELECT
+		    	 F.INGID,
+		         F.INGTYPE,
+		         D.OBJECTNAME,
+		         NVL(F.GROUPFLOW,0) GROUPFLOW,
+         		 NVL(F.THIRDPARTYFLOW,0) THIRDPARTYFLOW,
+		         F.COLLECTTIME
+		     FROM
+		         (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'DETCLASS_ING_IDX') D
+		 LEFT JOIN
+		         (SELECT 
+		                T.*
+		            FROM
+		                T_FLOW_INGREDIENT_CLASS_DAY T
+		           WHERE
+		                T.COLLECTTIME >= #{0} 
+		             AND
+		                T.COLLECTTIME < #{1}
+		             AND T.INGTYPE != '省级出口'
+		             ORDER BY T.INGID
+		          ) F
+		        ON D.OBJECTID = F.KPIID
+		]]>
+	</select>
+	
+	<!-- 根据出口ID和指标ID查询当天全省各小时流量趋势变化情况 -->
+	<resultMap type="java.util.HashMap" id="tendencyAnalyze">
+		<result property="exitId" column="EXITID"/>
+		<result property="kpiId" column="KPIID"/>
+		<result property="sumVal" column="FORECASTVAL"/>
+		<result property="forecastVal" column="FORECASTVAL"/>
+		<result property="collecttime" column="COLLECTTIME"/>
+	</resultMap>
+	<select id="findFlowTendencyAnalyze" resultMap="tendencyAnalyze">
+		<![CDATA[
+			SELECT
+			      T.EXITID,
+			      T.KPIID,
+			      NVL(T.SUM_VAL,0) SUMVAL,
+			      NVL(T.FORECAST_VAL,0) FORECASTVAL,
+			      TO_CHAR(T.COLLECTTIME,'YYYY/MM/DD HH24')||'点' COLLECTTIME
+			  FROM
+			      T_FLOW_EXIT_HOUR T
+			 WHERE
+			      T.EXITID = #{0}
+			   AND
+			      T.KPIID = #{1}
+			   AND
+			      T.COLLECTTIME >= TRUNC(SYSDATE,'DD')
+			   AND
+			      T.COLLECTTIME < TRUNC(SYSDATE+1,'DD')
+			   ORDER BY T.COLLECTTIME 
+		]]>
+	</select>
+	
+	<!-- 资源提供关键指标分析(柱状图) -->
+	<resultMap type="java.util.HashMap" id="resKpiHistogram">
+		<result property="id" column="ID"/>
+		<result property="label" column="COLLECTTIME" javaType="string"/>
+		<result property="name" column="NAME"/>
+		<result property="val" column="VAL" javaType="string"/>
+		<result property="perc" column="PERC" javaType="string"/>
+	</resultMap>
+	<select id="findResKpiHistogram" resultMap="resKpiHistogram">
+		<![CDATA[
+			 SELECT
+	               KPIID ID,
+	               KPINAME NAME,
+	               NVL(VAL,0) VAL,
+	               NVL(PERC,0) PERC,
+	               TO_CHAR(COLLECTTIME,'YYYY/MM') COLLECTTIME
+	           FROM
+	               T_FLOW_IDX_month 
+	          WHERE TYPE1 = 'RES_TYPE' 
+	            AND KPIID = #{0}
+	            AND COLLECTTIME >= #{1}
+	            AND COLLECTTIME <= #{2}
+       	   ORDER BY COLLECTTIME 
+       
+		]]>
+	</select>
+	
+	<!-- 资源提供关键指标分析(柱状图-天粒度) -->
+	<resultMap type="java.util.HashMap" id="resKpiHistogramOfDay">
+		<result property="id" column="ID"/>
+		<result property="label" column="COLLECTTIME" javaType="string"/>
+		<result property="name" column="NAME"/>
+		<result property="val" column="VAL" javaType="string"/>
+		<result property="perc" column="PERC" javaType="string"/>
+	</resultMap>
+	<select id="findResKpiHistogramOfDay" resultMap="resKpiHistogramOfDay">
+		<![CDATA[
+			 SELECT
+	               KPIID ID,
+	               KPINAME NAME,
+	               NVL(VAL,0) VAL,
+	               NVL(PERC,0) PERC,
+	               TO_CHAR(COLLECTTIME,'YYYY/MM/DD') COLLECTTIME
+	           FROM
+	               T_FLOW_IDX_DAY 
+	          WHERE TYPE1 = 'RES_TYPE' 
+	            AND KPIID = #{0}
+	            AND COLLECTTIME >= #{1}
+	            AND COLLECTTIME <= #{2}
+       	   ORDER BY COLLECTTIME 
+       
+		]]>
+	</select>
+	
+	<!-- 查询全国IDC流量分布图(月) -->
+	<resultMap type="java.util.HashMap" id="provinceIDCFlowMap">
+		<result property="rownum" column="ROWNUM" javaType="string"/>
+		<result property="province" column="PROVINCE"/>
+		<result property="val" column="VAL" javaType="string"/>
+		<result property="score" column="SCORE" javaType="string"/>
+	</resultMap>
+	<select id="findProvinceIDCFlowMap" resultMap="provinceIDCFlowMap">
+		<![CDATA[
+			SELECT
+			       ROWNUM,
+			       H.*
+			 FROM
+			     (
+			      SELECT
+			            PROVINCE.OBJECTNAME PROVINCE,
+			            DIR.VAL,
+			            DIR.PERC SCORE
+			       FROM
+			           (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'BUSI_DIR' AND CT.PARENNTID = #{0}) PROVINCE
+			   LEFT JOIN
+			           (
+			             SELECT T.DIRID,T.DIRNAME,T.VAL,T.PERC,T.COLLECTTIME 
+			               FROM T_FLOW_DIR_month T 
+			              WHERE T.TYPE1 = 'BUSI_TYPE' AND T.TYPE2 = #{1} 
+			                AND T.COLLECTTIME >= #{2}
+			                AND T.COLLECTTIME < #{3}
+			            ) DIR
+			          ON PROVINCE.OBJECTID = DIR.DIRID
+			          ORDER BY NVL(DIR.VAL,0) DESC
+			     ) H
+		]]>
+	</select>
+	
+	<!-- 查询全国IDC流量分布图(天) -->
+	<resultMap type="java.util.HashMap" id="provinceIDCFlowMapOfDay">
+		<result property="rownum" column="ROWNUM" javaType="string"/>
+		<result property="province" column="PROVINCE"/>
+		<result property="val" column="VAL" javaType="string"/>
+		<result property="score" column="SCORE" javaType="string"/>
+	</resultMap>
+	<select id="findProvinceIDCFlowMapOfDay" resultMap="provinceIDCFlowMapOfDay">
+		<![CDATA[
+			SELECT
+			       ROWNUM,
+			       H.*
+			 FROM
+			     (
+			      SELECT
+			            PROVINCE.OBJECTNAME PROVINCE,
+			            DIR.VAL,
+			            DIR.PERC SCORE
+			       FROM
+			           (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'BUSI_DIR' AND CT.PARENNTID = #{0}) PROVINCE
+			   LEFT JOIN
+			           (
+			             SELECT T.DIRID,T.DIRNAME,T.VAL,T.PERC,T.COLLECTTIME 
+			               FROM T_FLOW_DIR_DAY T 
+			              WHERE T.TYPE1 = 'BUSI_TYPE' AND T.TYPE2 = #{1} 
+			                AND T.COLLECTTIME >= #{2}
+			                AND T.COLLECTTIME < #{3}
+			            ) DIR
+			          ON PROVINCE.OBJECTID = DIR.DIRID
+			          ORDER BY NVL(DIR.VAL,0) DESC
+			     ) H
+		]]>
+	</select>
+	<select id="findDIC" resultType="hashmap">
+		SELECT * FROM T_DIC WHERE OBJECTTYPE = #{type}
+		<choose>
+			<when test="type == 'CITY'"> union select * from t_dic where objecttype = 'PROVINCE' and objectname like '云南%'</when>
+			<when test="type == 'BUSI_ING_DIR'"> and lev = 1 and objectname != '其他'</when>
+			<when test="type == 'BUSI_DIR'"> and lev =2</when>
+			<when test="type == 'RES_DIR'"> and lev =2</when>
+			<when test="type == 'BUSI_IDX'"> and objectname in ('铁通资源共享比重','网外资源总依赖度','省际出口分流占比')</when>
+			<when test="type == 'RES_IDX'"> and objectname like 'IDC%'</when>
+		</choose>
+	</select>
+	
+	<select id="findDICChild" resultType="hashmap">
+		select * from t_dic where parenntid = #{parentid}
+	</select>
+	<!-- 业务访问流向日均流量及占比分析  分页-->
+	<select id="findCustomBusiFlow" resultType="com.ultrapower.flowmanage.modules.flow.vo.CustomFlowDirection">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY collectionTime,flowDirectionId) AS "row_number"
+			from (
+		</if>
+		select dirid flowDirectionId,
+		       dirname flowDirectionName,
+		       type2 business,
+		       round(val/1024/1024,2) flow,
+		       perc proportion,
+		 <choose>
+		 	<when test="timeType == 'month'">  
+		 
+		       to_char(collecttime, 'yyyy-mm') collectionTime
+		  from T_FLOW_DIR_MONTH 
+		  	</when>
+		 	<when test="timeType == 'day'">
+				to_char(collecttime, 'yyyy-mm-dd') collectionTime
+		  from T_FLOW_DIR_day 
+		 	</when>
+		 </choose>    
+		 where type1 = #{type}
+		   and dirid = #{dirId}
+		   and collecttime between #{starttime} and #{endtime}
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<!-- 业务访问流向日均流量及占比分析 总数-->
+	<select id="findCustomBusiFlowTotal" resultType="int">
+	select count(*)
+		<choose>
+		 	<when test="timeType == 'month'">  
+		 
+		  from T_FLOW_DIR_MONTH 
+		  	</when>
+		 	<when test="timeType == 'day'">
+		  from T_FLOW_DIR_day 
+		 	</when>
+		 </choose>
+		  where type1 = #{type}
+		   and dirid = #{dirId}    	
+		   and collecttime between #{starttime} and #{endtime}
+	</select>
+	
+	<!-- 自定义 业务访问及资源提供流量成分构成 -->
+	<select id="findCustomFlowComponent" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME) AS "row_number"
+			from (
+		</if>
+			select * 
+			  from (SELECT COLLECTTIME,
+			               KPINAME,
+			               KPIID,
+			               SDIRNAME,
+			               round(SUM(IDCVAL)/1024/1024,2) IDCVAL,
+			               round(SUM(IDCPERC),2) IDCPERC,
+			               round(SUM(QBVAL)/1024/1024,2) QBVAL,
+			               round(SUM(QBPERC),2) QBPERC
+			          from (select to_char(t.collecttime, 'yyyy-mm-dd') collecttime,
+			                       
+			                       kpiname,
+			                       kpiid,
+			                        case when SUBSTR(dirname, 0, 2)='网内' then '网内他省' else dirname end sdirname,
+			                       dirname,
+			                       case
+			                         when type2 = 'IDC' then
+			                          val
+			                       end idcval,
+			                       case
+			                         when type2 = 'IDC' then
+			                          perc
+			                       end idcperc,
+			                       case
+			                         when type2 = '全部' then
+			                          val
+			                       end qbval,
+			                       case
+			                         when type2 = '全部' then
+			                          perc
+			                       end qbperc
+			                  <choose>
+							 	<when test="timeType == 'month'">  
+							 
+							  from T_FLOW_INGREDIENT_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							  from T_FLOW_INGREDIENT_day 
+							 	</when>
+							 </choose>
+			                  
+			                  
+			                  t
+			                  
+			                  
+			                 where t.dirname like '${dirname}'
+			                   and type2 in ('IDC', '全部')
+			                   and collecttime between #{starttime} and #{endtime}
+			                   )
+			         group by collecttime, kpiname, kpiid, sdirname)
+			 <if test="kpiid != null">
+			 where kpiid = #{kpiid}
+			 </if>
+		
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>
+	</select>
+	<!--自定义 业务访问及资源提供流量成分构成  总数-->
+	<select id="findCustomFlowComponentTotal" resultType="int">
+	select count(*)
+			  from (select collecttime,
+			               kpiname,
+			               kpiid,
+			               sdirname,
+			               sum(idcval) idcval,
+			               sum(idcperc) idcperc,
+			               sum(qbval) qbval,
+			               sum(qbperc) qbperc
+			          from (select to_char(t.collecttime, 'yyyy-mm-dd') collecttime,
+			                       
+			                       kpiname,
+			                       kpiid,
+			                        case when SUBSTR(dirname, 0, 2)='网内' then '网内他省' else dirname end sdirname,
+			                       dirname,
+			                       case
+			                         when type2 = 'IDC' then
+			                          val
+			                       end idcval,
+			                       case
+			                         when type2 = 'IDC' then
+			                          perc
+			                       end idcperc,
+			                       case
+			                         when type2 = '全部' then
+			                          val
+			                       end qbval,
+			                       case
+			                         when type2 = '全部' then
+			                          perc
+			                       end qbperc
+			                  <choose>
+							 	<when test="timeType == 'month'">  
+							 
+							  from T_FLOW_INGREDIENT_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							  from T_FLOW_INGREDIENT_day 
+							 	</when>
+							 </choose> t
+			                 where t.dirname like '${dirname}'
+			                   and type2 in ('IDC', '全部')
+			                   and collecttime between #{starttime} and #{endtime})
+			         group by collecttime, kpiname, kpiid, sdirname)
+			 <if test="kpiid != null">
+			 where kpiid = #{kpiid}
+			 </if>
+	</select>
+	<!--自定义 分页  业务访问成分构成详表(省网出口) -->
+	<select id="findCustomComponentDetails" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME) AS "row_number"
+			from (
+		</if>	
+		
+	  SELECT COLLECTTIME,
+             DIRID,
+             DIRNAME,
+             KPIID,
+             KPINAME,
+             ROUND(SUM(GLVAL) / 1024 / 1024 , 2) GLVAL,
+             SUM(GLPERC) GLPERC,
+             ROUND(SUM(WLANVAL) / 1024 / 1024 , 2) WLANVAL,
+             SUM(WLANPERC) WLANPERC,
+             ROUND(SUM(XQVAL) / 1024 / 1024 , 2) XQVAL,
+             SUM(XQPERC) XQPERC,
+             ROUND(SUM(ZXVAL) / 1024 / 1024 , 2) ZXVAL,
+             SUM(ZXPERC) ZXPERC
+			  from (select dirid,
+			               dirname,
+			               kpiid,
+			               kpiname,
+			               to_char(collecttime, 'yyyy-mm-dd') collecttime,
+			               case
+			                 when type2 = 'GPRS/LTE' then
+			                  val
+			               end glval,
+			               case
+			                 when type2 = 'GPRS/LTE' then
+			                  perc
+			               end glperc,
+			               case
+			                 when type2 = 'WLAN' then
+			                  val
+			               end WLANval,
+			               case
+			                 when type2 = 'WLAN' then
+			                  perc
+			               end WLANperc,
+			               case
+			                 when type2 = '小区宽带' then
+			                  val
+			               end xqval,
+			               case
+			                 when type2 = '小区宽带' then
+			                  perc
+			               end xqperc,
+			               case
+			                 when type2 = '专线' then
+			                  val
+			               end zxval,
+			               case
+			                 when type2 = '专线' then
+			                  perc
+			               end zxperc
+			        
+			          from 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_INGREDIENT_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_INGREDIENT_day 
+							 	</when>
+							 </choose>
+			         where type1 = 'BUSI_TYPE'
+			           and type2 != '全部'
+			           and dirid = #{dirid} 
+			           and collecttime between  #{starttime} and #{endtime}
+			           <if test="kpiid != null">
+			           and kpiid = #{kpiid}
+			           </if>
+			           )
+			 group by collecttime, dirid, dirname, kpiid, kpiname	
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>	
+	</select>
+	<!--自定义总数  业务访问成分构成详表(省网出口)  -->
+	<select id="findCustomComponentDetailsTotal" resultType="int">
+	
+	select count(*) from 
+	(
+			select collecttime,
+			       dirid,
+			       dirname,
+			       kpiid,
+			       kpiname,
+			       round(sum(glval) / 1024 / 1024 , 2) glval,
+			       sum(glperc) glperc,
+			       round(sum(WLANval) / 1024 / 1024 , 2) WLANval,
+			       sum(WLANperc) WLANperc,
+			       round(sum(xqval) / 1024 / 1024 , 2) xqval,
+			       sum(xqperc) xqperc,
+			       round(sum(zxval) / 1024 / 1024 , 2) zxval,
+			       sum(zxperc) zxperc
+			  from (select dirid,
+			               dirname,
+			               kpiid,
+			               kpiname,
+			               to_char(collecttime, 'yyyy-mm-dd') collecttime,
+			               case
+			                 when type2 = 'GPRS/LTE' then
+			                  val
+			               end glval,
+			               case
+			                 when type2 = 'GPRS/LTE' then
+			                  perc
+			               end glperc,
+			               case
+			                 when type2 = 'WLAN' then
+			                  val
+			               end WLANval,
+			               case
+			                 when type2 = 'WLAN' then
+			                  perc
+			               end WLANperc,
+			               case
+			                 when type2 = '小区宽带' then
+			                  val
+			               end xqval,
+			               case
+			                 when type2 = '小区宽带' then
+			                  perc
+			               end xqperc,
+			               case
+			                 when type2 = '专线' then
+			                  val
+			               end zxval,
+			               case
+			                 when type2 = '专线' then
+			                  perc
+			               end zxperc
+			        
+			          from 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_INGREDIENT_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_INGREDIENT_day 
+							 	</when>
+							 </choose>
+			         where type1 = 'BUSI_TYPE'
+			           and type2 != '全部'
+			           and dirid = #{dirid} 
+			           and collecttime between  #{starttime} and #{endtime}
+			           <if test="kpiid != null">
+			           and kpiid = #{kpiid}
+			           </if>
+			           )
+			 group by collecttime, dirid, dirname, kpiid, kpiname	
+	
+	
+	
+	)
+	
+	
+	
+	</select>
+	<!--自定义 资源节点内容提供成分详表（省网出口）分页 -->
+	<select id="findCustomResComponentDetails" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME,dirid,kpiid) AS "row_number"
+			from (
+		</if>		
+		SELECT TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+				       DIRID,
+				       DIRNAME,
+				       KPIID,
+				       KPINAME,
+				       ROUND(VAL / 1024 / 1024 , 2) VAL,
+				       PERC
+				  from 
+		
+					          		<choose>
+									 	<when test="timeType == 'month'">  
+									 
+									   T_FLOW_INGREDIENT_MONTH 
+									  	</when>
+									 	<when test="timeType == 'day'">
+									   T_FLOW_INGREDIENT_day 
+									 	</when>
+									 </choose>
+				 where TYPE1 = 'RES_TYPE'
+				   and type2 =  'IDC'
+				   and dirid = #{dirid}
+				   and collecttime between  #{starttime} and #{endtime}
+				   <if test="kpiid != null">
+					 and kpiid = #{kpiid}
+					</if>		
+		
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>			
+	</select>
+	<!--自定义 资源节点内容提供成分详表（省网出口） 总数 -->
+	<select id="findCustomResComponentDetailsTotal" resultType="int">
+	select count(*) from (
+		SELECT TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+		       DIRID,
+		       DIRNAME,
+		       KPIID,
+		       KPINAME,
+		       ROUND(VAL / 1024 / 1024 , 2) VAL,
+		       PERC
+		  from 
+
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_INGREDIENT_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_INGREDIENT_day 
+							 	</when>
+							 </choose>
+		 where TYPE1 = 'RES_TYPE'
+				and type2 =  'IDC'
+				and dirid = #{dirid}
+		   and collecttime between  #{starttime} and #{endtime}
+		   <if test="kpiid != null">
+			 and kpiid = #{kpiid}
+			</if>
+	)
+	
+	
+	</select>
+	
+	
+	<!--自定义 资源提供流向日均流量及占比分析 分页 -->
+	<select id="findCustomResDirection" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME,dirid) AS "row_number"
+			from (
+		</if>		
+		SELECT DIRID,
+		       DIRNAME,
+		       ROUND(VAL/1024/1024,2) VAL,
+		       PERC,
+		       TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME
+		  from 
+
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_DIR_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_DIR_DAY 
+							 	</when>
+							 </choose>
+		 where TYPE1 = 'RES_TYPE'
+		   and DIRID IN (${dirid})
+		   and collecttime between #{starttime} and #{endtime}
+		
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>			
+	</select>
+	<!--自定义  资源提供流向日均流量及占比分析  总数 -->
+	<select id="findCustomResDirectionTotal" resultType="int">
+	select count(*) from (
+		SELECT DIRID,
+		       DIRNAME,
+		       ROUND(VAL/1024/1024,2) VAL,
+		       PERC,
+		       TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME
+		  from 
+
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_DIR_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_DIR_DAY 
+							 	</when>
+							 </choose>
+		 where TYPE1 = 'RES_TYPE'
+		   and DIRID IN (${dirid})
+		   and collecttime between #{starttime} and #{endtime}
+	)
+	
+	
+	</select>
+	
+	<!--自定义 各地市访问电信及联通流量分析 分页 -->
+	<select id="findCustomCityTelecomUnicomFlow" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME) AS "row_number"
+			from (
+		</if>		
+		SELECT OPERNAME,
+		       CITY,
+		       TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+		       ROUND(VAL / 1024 / 1024 , 2) VAL,
+		       PERC
+		  FROM 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_OPER_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_OPER_DAY 
+							 	</when>
+							 </choose>
+ 			T
+		 WHERE T.OPERNAME = #{opername}
+		   AND CITYID = #{cityid}
+		   and collecttime between  #{starttime} and #{endtime}
+		
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>			
+	</select>
+	<!--自定义  各地市访问电信及联通流量分析  总数 -->
+	<select id="findCustomCityTelecomUnicomFlowTotal" resultType="int">
+	select count(*) from (
+		SELECT OPERNAME,
+		       CITY,
+		       TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+		       ROUND(VAL / 1024 / 1024 , 2) VAL,
+		       PERC
+		  FROM 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_OPER_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_OPER_DAY 
+							 	</when>
+							 </choose>
+ 			T
+		 WHERE T.OPERNAME = #{opername}
+		   AND CITYID = #{cityid}
+		   and collecttime between  #{starttime} and #{endtime}
+	)
+	
+	
+	</select>
+	
+	<!--自定义 业务访问关键指标详情 IDC资源提供关键指标详情 分页 -->
+	<select id="findCustomKeyIndex" resultType="hashmap">
+		<if test="pageSize > 0 and pageNo > 0">
+			select *
+			from (select *
+			from (select o.*, row_number() OVER(ORDER BY COLLECTTIME) AS "row_number"
+			from (
+		</if>		
+		SELECT TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+		       KPINAME,
+		       KPIID,
+		       TYPE2,
+		       ROUND(VAL / 1024 / 1024 , 2) VAL,
+		       PERC
+		  FROM 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_IDX_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_IDX_DAY 
+							 	</when>
+							 </choose>
+ 			T
+		 WHERE kpiid = #{kpiid}
+		 <choose>
+		 	<when test="type=='bus'">
+		 	and type1 = 'BUSI_TYPE'
+   			and type2 = #{type2}
+		 	</when>
+		 	<when test="type=='res'">
+			and type1 = 'RES_TYPE'
+		   	and type2='IDC'
+		   </when>
+		 </choose>
+		  
+		   and collecttime between  #{starttime} and #{endtime}
+		
+		<if test="pageSize > 0 and pageNo > 0">
+			)
+			o) p
+		 <![CDATA[  where p."row_number" > (${pageNo}-1)*${pageSize}) q where rownum <= ${pageSize}]]>
+		</if>			
+	</select>
+	<!--自定义 业务访问关键指标详情 IDC资源提供关键指标详情  总数 -->
+	<select id="findCustomKeyIndexTotal" resultType="int">
+	select count(*) from (
+		SELECT TO_CHAR(COLLECTTIME, 'yyyy-mm-dd') COLLECTTIME,
+		       KPINAME,
+		       KPIID,
+		       TYPE2,
+		       ROUND(VAL / 1024 / 1024 , 2) VAL,
+		       PERC
+		  FROM 
+			          		<choose>
+							 	<when test="timeType == 'month'">  
+							 
+							   T_FLOW_IDX_MONTH 
+							  	</when>
+							 	<when test="timeType == 'day'">
+							   T_FLOW_IDX_DAY 
+							 	</when>
+							 </choose>
+ 			T
+		 WHERE kpiid = #{kpiid}
+		 <choose>
+		 	<when test="type=='bus'">
+		 	and type1 = 'BUSI_TYPE'
+   			and type2 = #{type2}
+		 	</when>
+		 	<when test="type=='res'">
+			and type1 = 'RES_TYPE'
+		   	and type2='IDC'
+		   </when>
+		 </choose>
+		  
+		   and collecttime between  #{starttime} and #{endtime}
+	)
+	
+	
+	</select>
+</mapper>
+

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.xdrAnalyse.dao.mapper.XdrAnalyseMapper">
+	<!-- 根据类型、上级ID查询ID和名称 -->
+	<resultMap type="java.util.HashMap" id="dicInfo">
+		<result property="id" column="ID"/>
+		<result property="name" column="NAME"/>
+	</resultMap>
+	<select id="findDICInfo" resultMap="dicInfo">
+		SELECT 
+			  OBJECTID ID, 
+			  OBJECTNAME NAME 
+		  FROM 
+		  	  T_DIC
+		 WHERE 
+		 	  OBJECTTYPE = #{objectType} 
+		 <if test="parentId != null and parentId != '' ">
+		   AND PARENNTID  = #{parentId}
+		 </if>
+	</select>
+	
+	<!-- 根据区县名称查询网格编号 -->
+	<resultMap type="java.util.HashMap" id="wgNumberBydistrict">
+		<result property="districtName" column="DISTRICTNAME"/>
+		<result property="wgNumber" column="WGNUMBER"/>
+	</resultMap>
+	<select id="findWGNumberBydistrict" resultMap="wgNumberBydistrict">
+		<![CDATA[
+			SELECT DISTINCT 
+			       T.DISTRICT_NAME DISTRICTNAME, 
+			       T.WG_ID WGNUMBER 
+			  FROM 
+			       GRIP_CELL_MAPPING2 T 
+			 WHERE 
+			       DISTRICT_NAME = #{0}
+		]]>
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID查询用户点击量信息记录数 -->
+	<select id="findUserClickRateInfoRowCount" resultType="int">
+		<![CDATA[
+			SELECT
+			      COUNT(T.WEBNAME) ROWCOUNT
+			  FROM
+			      T_XDRVIEW_SITESHITS T
+			 WHERE
+			      T.USERGROUP_ID = #{0}
+			   AND
+			      T.BUSITYPE_ID = #{1}
+			   AND
+			      T.COLLECTTIME = TO_DATE(#{2}, 'YYYY-MM-DD')
+		]]>
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID分页查询用户点击量信息列表 -->
+	<resultMap type="java.util.HashMap" id="userClickRateInfoTable">
+		<result property="webName" column="WEBNAME"/>
+		<result property="provinceResPerc" column="PROVINCE_RES_PERC"/>
+		<result property="netinResPerc" column="NETIN_RES_PERC"/>
+		<result property="crccPerc" column="CRCC_PERC"/>
+		<result property="ctccPerc" column="CTCC_PERC"/>
+		<result property="cuccPerc" column="CUCC_PERC"/>
+		<result property="other_perc" column="OTHER_PERC"/>
+	</resultMap>
+	<select id="findUserClickRateInfoTable" resultMap="userClickRateInfoTable">
+		<![CDATA[
+			 SELECT
+		           Q.*
+		       FROM
+		           (SELECT
+		                  ROWNUM "NUMBER",
+		                  S.*
+		              FROM
+		                  (SELECT
+							      T.WEBNAME,
+							      NVL(T.PROVINCE_RES_PERC,0) PROVINCE_RES_PERC,
+							      NVL(T.NETIN_RES_PERC,0) NETIN_RES_PERC,
+							      NVL(T.CRCC_PERC,0) CRCC_PERC,
+							      NVL(T.CTCC_PERC,0) CTCC_PERC,
+							      NVL(T.CUCC_PERC,0) CUCC_PERC,
+							      NVL(T.OTHER_PERC,0) OTHER_PERC
+							  FROM
+							      T_XDRVIEW_SITESHITS T
+							 WHERE
+							      T.USERGROUP_ID = #{0}
+							   AND
+							      T.BUSITYPE_ID = #{1}
+							   AND
+							      T.COLLECTTIME = TO_DATE(#{2}, 'YYYY-MM-DD')
+						  ) S
+	              ) Q
+	         WHERE 
+	           	   Q."NUMBER" > (#{3} - 1) * #{4}
+		       AND
+		           Q."NUMBER" <= #{3} * #{4}
+		]]>
+	</select>	
+	
+	<!-- 根据时间段、地市ID、城市ID、网格编号、用户群ID、业务类型ID查询点击率最高TOP15网站 -->
+	<resultMap type="java.util.HashMap" id="userClickRateWebTOP15">
+		<result property="webName" column="WEBNAME" />
+		<result property="hits" column="HITS" />
+	</resultMap>
+	<select id="findUserClickRateWebTOP15" resultMap="userClickRateWebTOP15">
+		  SELECT
+		        Q.*
+		    FROM
+		        (SELECT
+		              T.WEBNAME,
+		              NVL(T.HITS,0) HITS
+		          FROM
+		              T_XDRVIEW_USERBEHAVIOR T
+		         WHERE
+		              T.CITY_ID = #{cityId}
+	           <if test="countyId != null and countyId != ''">
+		           AND T.COUNTY_ID = #{countyId}
+	           </if>
+		           AND
+		              T.GRIDNUMBER = #{gridNumber}
+		           AND
+		              T.USERGROUP_ID = #{userGroupId}
+		           AND
+		              T.BUSITYPE_ID = #{busiTypeId}
+		           AND 
+		              T.COLLECTTIME = TO_DATE(#{time},'YYYY-MM-DD HH24:MI:SS')
+		           ORDER BY NVL(T.HITS,0) DESC
+		         ) Q
+		   WHERE 
+		         ROWNUM &lt;= 15
+	</select>
+              
+	<!-- 根据时间、用户群ID、业务类型ID查询访问地市质量分析 -->
+	<resultMap type="java.util.HashMap" id="visitQualityByCity">
+		<result property="cityId" column="CITYID" />
+		<result property="cityName" column="CITYNAME" />
+		<result property="score" column="SCORE" />
+	</resultMap>
+	<select id="findVisitQualityByCity" resultMap="visitQualityByCity">
+		<![CDATA[
+			SELECT
+		          D.OBJECTID CITYID,
+		          D.OBJECTNAME CITYNAME,
+		          NVL(T.SCORE,0) SCORE
+		      FROM
+		          (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'CITY') D 
+		 LEFT JOIN  
+		          (SELECT 
+		                CITY_ID,
+		                SCORE 
+		            FROM
+		                T_XDRVIEW_QUALITY_CITY 
+		           WHERE
+		                USERGROUP_ID = #{0}
+		             AND
+		                BUSITYPE_ID = #{1}
+		             AND
+		                COLLECTTIME = TO_DATE(#{2},'YYYY-MM-DD')
+		           ) T
+		         ON
+		           D.OBJECTID = T.CITY_ID
+		   ORDER BY NVL(T.SCORE,0) DESC
+		]]>
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID、地市ID查询访问区县质量分析 -->
+	<resultMap type="java.util.HashMap" id="visitQualityByCounty">
+		<result property="cityId" column="CITYID" />
+		<result property="cityName" column="CITYNAME" />
+		<result property="score" column="SCORE" />
+	</resultMap>
+	<select id="findVisitQualityByCounty" resultMap="visitQualityByCounty">
+		<![CDATA[
+			SELECT
+		          D.OBJECTID CITYID,
+		          D.OBJECTNAME CITYNAME,
+		          NVL(T.SCORE,0) SCORE
+		      FROM
+		          (SELECT OBJECTID,OBJECTNAME FROM T_DIC WHERE OBJECTTYPE = 'COUNTY' AND PARENNTID = #{2}) D 
+		 LEFT JOIN  
+		          (SELECT 
+		                COUNTY_ID,
+		                SCORE 
+		            FROM
+		                T_XDRVIEW_QUALITY_COUNTY 
+		           WHERE
+		                USERGROUP_ID = #{0}
+		             AND
+		                BUSITYPE_ID = #{1}
+		             AND
+		                CITY_ID = #{2}
+		             AND
+		                COLLECTTIME = TO_DATE(#{3},'YYYY-MM-DD')
+		           ) T
+		         ON
+		           D.OBJECTID = T.COUNTY_ID
+		   ORDER BY NVL(T.SCORE,0) DESC
+		]]>
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID查询网站质量分析记录数 -->
+	<select id="findSitesQualityRowCount" resultType="int">
+		 SELECT
+		       COUNT(T.WEBNAME) ROWCOUNT
+		   FROM
+		       T_XDRVIEW_QUALITY_SITES T 
+		  WHERE
+		       T.USERGROUP_ID = #{userGroupId}
+		    AND
+		       T.BUSITYPE_ID = #{busiTypeId}
+		    AND
+		       T.COLLECTTIME = TO_DATE(#{time},'YYYY-MM-DD')
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID分页查询网站质量分析列表 -->
+	<resultMap type="java.util.HashMap" id="sitesQualityTable">
+		<result property="webName" column="WEBNAME" />
+		<result property="webQuality" column="WEBQUALITY" />
+		<result property="timedelay" column="TIMEDELAY" />
+		<result property="mbps" column="MBPS" />
+	</resultMap>
+	<select id="findSitesQualityTable" resultMap="sitesQualityTable">
+		   SELECT
+			     Q.*
+			 FROM
+			     (SELECT
+			            ROWNUM "NUMBER",
+			            S.*
+			        FROM
+			            (SELECT
+			                   T.WEBNAME,
+			                   NVL(T.WEBQUALITY,0) WEBQUALITY,
+			                   NVL(T.TIMEDELAY,0) TIMEDELAY,
+			                   NVL(T.MBPS,0) MBPS
+			               FROM
+			                   T_XDRVIEW_QUALITY_SITES T 
+			              WHERE
+			                   T.USERGROUP_ID = #{userGroupId}
+			                AND
+			                   T.BUSITYPE_ID = #{busiTypeId}
+			                AND
+			                   T.COLLECTTIME = TO_DATE(#{time},'YYYY-MM-DD')
+			           ) S
+			     ) Q
+			WHERE 
+			     Q."NUMBER" &gt; (#{pageNo} - 1) * #{pageSize}
+			 AND
+			     Q."NUMBER" &lt;= #{pageNo} * #{pageSize}
+	</select>
+ 
+ 
+	<!-- 根据时间、用户群ID、业务类型ID查询网站质量预警记录数 -->
+	<select id="findSitesQualityWarningRowCount" resultType="int">
+		 SELECT
+		       COUNT(T.WEBNAME) ROWCOUNT
+		   FROM
+		       T_XDRVIEW_QUALITY_WARNING T 
+		  WHERE
+		       T.USERGROUP_ID = #{userGroupId}
+		    AND
+		       T.BUSITYPE_ID = #{busiTypeId}
+		    AND
+		       T.COLLECTTIME = TO_DATE(#{time},'YYYY-MM-DD')
+	</select>
+	
+	<!-- 根据时间、用户群ID、业务类型ID分页查询网站质量预警列表 -->
+	<resultMap type="java.util.HashMap" id="sitesQualityWarningTable">
+		<result property="webName" column="WEBNAME" />
+		<result property="webQuality" column="WEBQUALITY" />
+		<result property="timedelay" column="TIMEDELAY" />
+		<result property="mbps" column="MBPS" />
+	</resultMap>
+	<select id="findSitesQualityWarningTable" resultMap="sitesQualityWarningTable">
+		   SELECT
+			     Q.*
+			 FROM
+			     (SELECT
+			            ROWNUM "NUMBER",
+			            S.*
+			        FROM
+			            (SELECT
+			                   T.WEBNAME,
+			                   NVL(T.WEBQUALITY,0) WEBQUALITY,
+			                   NVL(T.TIMEDELAY,0) TIMEDELAY,
+			                   NVL(T.MBPS,0) MBPS
+			               FROM
+			                   T_XDRVIEW_QUALITY_WARNING T 
+			              WHERE
+			                   T.USERGROUP_ID = #{userGroupId}
+			                AND
+			                   T.BUSITYPE_ID = #{busiTypeId}
+			                AND
+			                   T.COLLECTTIME = TO_DATE(#{time},'YYYY-MM-DD')
+			           ) S
+			     ) Q
+			WHERE 
+			     Q."NUMBER" &gt; (#{pageNo} - 1) * #{pageSize}
+			 AND
+			     Q."NUMBER" &lt;= #{pageNo} * #{pageSize}
+	</select>
+ 
+</mapper>
+

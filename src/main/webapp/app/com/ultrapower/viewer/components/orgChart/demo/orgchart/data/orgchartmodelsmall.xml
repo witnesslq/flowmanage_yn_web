@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<message layout="default" name="三网流量发展健康度"  rate="85.5" email="ejoplin@yoyodyne.com" phone="555-0100" fax="555-0101"  businessUnit="Management" status="present" gender="male">
+  <message name="GSM流量发展健康度" rate="82" layout="default" >
+    <message layout="default" name="资源消耗" rate="79.5" >
+      <message  name="GSM容量投放效益" rate="82" tem="12M"  />
+    </message>
+    <message layout="default" name="承载效率" rate="83.5"  >
+      <message  name="PDCH平均吞吐率" rate="82"  tem="12kbps" />
+    </message>
+  	<message layout="default" name="网络负荷" rate="79"  >
+  	  <message  name="忙时无线利用率" rate="82"  />
+  	  <message  name="数据业务资源占比" rate="82"  />
+  	</message>
+  	<message layout="default" name="网络质量" rate="90"   >
+  	  <message  name="高干扰小区占比" rate="82"  />
+  	   <message  name="质差小区占比" rate="82"  />
+  	</message>
+  </message>
+  <message  name="TD流量发展健康度" rate="80.5" >
+    <message layout="default" name="增长结构" rate="40">
+      <message  layout="default" name="TD流量同比增幅" rate="80"  />
+      <message  layout="default" name="TD承载G3终端流量比" rate="80"  />
+      <message  layout="default" name="TD手机客户同比增幅" rate="80"  />
+    </message>
+    <message layout="default" name="网络效益" rate="86" >
+	  <message  layout="default" name="TD手机客户月均流量" rate="80"  />
+      <message  layout="default" name="每MBGPRS流量收益" rate="80"  />
+  	  <message  layout="default" name="TD超闲小区比例" rate="80"  />
+    </message>
+    <message layout="default" name="网络质量" rate="82" >
+      <message  layout="default" name="TD小区退服率" rate="80"  />
+      <message  layout="default" name="TD高质差小区占比" rate="80"  />
+    </message>
+  </message>
+  <message layout="default" name="Wlan流量发展健康度" rate="82">
+    <message layout="default" name="增长结构" rate="70">
+      <message  layout="default" name="WLAN流量同比增幅" rate="80"/>
+      <message  layout="default" name="WLAN手机流量占比" rate="80"/>
+    </message>
+    <message layout="default" name="网络效益" rate="90">
+      <message  layout="default" name="平均每AP流量" rate="80"/>
+      <message  layout="default" name="平均每AP承载用户数" rate="80"/>
+      <message  layout="default" name="超闲AP率" rate="80"/>
+    </message>
+    <message layout="default" name="网络质量" rate="20">
+      <message  layout="default" name="AP退服率" rate="80"/>
+      <message  layout="default" name="关联成功率" rate="80"/>
+      <message  layout="default" name="地址分配成功率" rate="80"/>
+      <message  layout="default" name="超忙AP率" rate="80"/>
+    </message>
+  </message>
+  <message layout="default" name="三网分流健康度" rate="82" >
+   <message layout="default" name="整体分流效果" rate="70">
+      <message  layout="default" name="GSM网络手机流量占比" rate="80"/>
+    </message>
+    <message layout="default" name="TD分流" rate="90">
+      <message  layout="default" name="TD网络手机流量占比" rate="80"/>
+    </message>
+    <message layout="default" name="Wlan分流" rate="20">
+      <message  layout="default" name="WLAN网络手机流量占比" rate="80"/>
+    </message>
+  </message>
+</message>

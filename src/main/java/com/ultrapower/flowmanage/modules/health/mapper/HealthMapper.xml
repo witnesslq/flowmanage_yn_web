@@ -1,0 +1,1134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.health.dao.mapper.HealthMapper">
+	
+	<!-- 查询人员信息 -->
+	<select id="findEmp" resultType="Emp">
+			SELECT e.empno,e.ename,e.job from EMP e
+	</select>
+	
+	<select id="findEmpByEmpno" resultType="Emp">
+			SELECT e.empno,e.ename,e.job from EMP e where e.empno = #{empno}
+	</select>
+	
+	<!-- 根据地市名称和健康度类型查询健康度指标详情 -->
+	<select id="findThreeNetHealth" resultType="ThreeNetHealth">
+				SELECT
+	                   T.OBJECTID,T.OBJECTNAME,T.PARENNTID,T.LEV,T.REMARK,
+	                   D.CITY,D.CITYID,D.HEALTHNAME,
+	                   D.SCORE SCORE,
+                       D.VAL VAL,
+                       T.UNIT
+	              FROM 
+	                   (SELECT * FROM T_DIC WHERE OBJECTTYPE = #{healthtype}) T
+	         LEFT JOIN (SELECT * FROM T_HEALTH_INFO_MONTH WHERE 
+	         			<!-- <if test="cityname == '全省'">
+	         				AREA = #{cityname} AND
+	         			</if>
+	         			<if test="cityname != '全省'">
+	         				CITY= #{cityname} AND AREA = '市级' AND
+	         			</if> -->
+	         			 HEALTHTYPE=#{healthtype}
+	         			AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}) D 
+	                ON T.OBJECTID = D.HEALTHID
+	        <if test="healthtype == 'HEALTH_INTERNET'">
+	        START WITH T.LEV = 4
+	        </if>
+	        <!-- <if test="healthtype == 'HEALTH_TD' || healthtype == 'HEALTH_4NET'">
+	        START WITH T.LEV = 3
+	        </if> -->
+	        CONNECT BY T.OBJECTID = PRIOR T.PARENNTID
+	</select>
+		<!-- 根据地市名称和健康度类型查询健康度指标详情 -->
+	<select id="findThreeNetHealthOfDay" resultType="ThreeNetHealth">
+				SELECT
+	                   T.OBJECTID,T.OBJECTNAME,T.PARENNTID,T.LEV,T.REMARK,
+	                   D.CITY,D.CITYID,D.HEALTHNAME,
+	                   D.SCORE SCORE,
+                       D.VAL VAL,
+                       T.UNIT
+	              FROM 
+	                   (SELECT * FROM T_DIC WHERE OBJECTTYPE = #{healthtype}) T
+	         LEFT JOIN (SELECT * FROM T_HEALTH_INFO_DAY WHERE 
+	         			 HEALTHTYPE=#{healthtype}
+	         			AND COLLECTTIME &gt;= #{getMonthFirstDay} AND COLLECTTIME &lt; #{nextMonthFirstDay}) D 
+	                ON T.OBJECTID = D.HEALTHID
+	        <if test="healthtype == 'HEALTH_INTERNET'">
+	        START WITH T.LEV = 4
+	        </if>
+	        CONNECT BY T.OBJECTID = PRIOR T.PARENNTID
+	</select>
+	
+	<!-- 根据健康度指标ID查询各地市健康度分数排名 -->
+	<select id="findCityHealthScoreById" resultType="CityContrastVo">
+		<![CDATA[
+			SELECT 
+			       ROWNUM ID,
+			       H.*
+			FROM
+			  ( SELECT
+			  		   HEALTH.OBJECTID CITYID,
+			           HEALTH.OBJECTNAME CITYNAME,
+			           HEALTH.SCORE
+			    FROM
+				    (SELECT 
+				            CTY.OBJECTID,CTY.OBJECTNAME,
+				            NVL(NET.SCORE,0) SCORE
+				       FROM
+				           	(SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+				  LEFT JOIN 
+				           	(SELECT T.CITYID,T.SCORE FROM T_HEALTH_INFO T WHERE T.HEALTHID = #{0} AND T.HEALTHTYPE = #{1}
+                     		 AND COLLECTTIME >= #{2} AND COLLECTTIME < #{3}) NET
+				         ON 
+				            CTY.OBJECTID = NET.CITYID 
+				    ) HEALTH 
+			    ORDER BY HEALTH.SCORE DESC
+			  ) H
+		]]>
+	</select>
+		<!-- 根据健康度指标ID查询各地市健康度分数排名 -->
+	<select id="findCityHealthScoreByIdOfDay" resultType="CityContrastVo">
+		<![CDATA[
+			SELECT 
+			       ROWNUM ID,
+			       H.*
+			FROM
+			  ( SELECT
+			           HEALTH.OBJECTNAME CITYNAME,
+			           HEALTH.SCORE
+			    FROM
+				    (SELECT 
+				            CTY.OBJECTID,CTY.OBJECTNAME,
+				            NVL(NET.SCORE,0) SCORE
+				       FROM
+				           	(SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+				  LEFT JOIN 
+				           	(SELECT T.CITYID,T.SCORE FROM T_HEALTH_INFO_DAY T WHERE T.HEALTHID = #{0} AND T.HEALTHTYPE = #{1}
+                     		 AND COLLECTTIME >= #{2} AND COLLECTTIME < #{3}) NET
+				         ON 
+				            CTY.OBJECTID = NET.CITYID 
+				    ) HEALTH 
+			    ORDER BY HEALTH.SCORE DESC
+			  ) H
+		]]>
+	</select>
+	
+	<!-- 根据健康度指标ID和健康度类型查询各地市健康度指标名称和分数  健康度三级指标分数-->
+	<select id="findHealthNameAndScoreById" resultType="CityContrastVo">
+		<![CDATA[
+			 SELECT 
+		          CTY.OBJECTID CITYID,
+          		  CTY.OBJECTNAME CITYNAME,
+		          NET.HEALTHNAME,
+		          NVL(NET.SCORE,0) SCORE
+		      FROM
+		          (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+		 LEFT JOIN
+		          (
+		           SELECT 
+		                  T.CITYID,
+		                  (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+		                  T.SCORE
+		             FROM 
+		                  T_HEALTH_info T 
+		            WHERE 
+		                  T.HEALTHID IN (SELECT N.OBJECTID FROM T_DIC N WHERE N.PARENNTID = #{0} AND n.LEV = 3 and n.objecttype = #{1})
+		              AND T.HEALTHTYPE = #{1}   
+                      AND T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+		          ) NET
+		       ON
+		          CTY.OBJECTID = NET.CITYID
+		]]>
+	</select>
+		
+	<!-- 根据健康度指标ID和健康度类型查询各地市健康度指标名称和分数  健康度三级指标分数-->
+	<select id="findHealthNameAndScoreByIdOfDay" resultType="CityContrastVo">
+		<![CDATA[
+			 SELECT 
+		          CTY.OBJECTID CITYID,
+          		  CTY.OBJECTNAME CITYNAME,
+		          NET.HEALTHNAME,
+		          NVL(NET.SCORE,0) SCORE
+		      FROM
+		          (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+		 LEFT JOIN
+		          (
+		           SELECT 
+		                  T.CITYID,
+		                  (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+		                  T.SCORE
+		             FROM 
+		                  T_HEALTH_INFO_DAY T 
+		            WHERE 
+		                  T.HEALTHID IN (SELECT N.OBJECTID FROM T_DIC N WHERE N.PARENNTID = #{0} AND n.LEV = 3 and n.objecttype = #{1})
+		              AND T.HEALTHTYPE = #{1}   
+                      AND T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+		          ) NET
+		       ON
+		          CTY.OBJECTID = NET.CITYID
+		]]>
+	</select>
+	
+	<!-- 查询健康度业务指标范围值 -->
+	<select id="findHealthBizScope" resultType="CityContrastVo">
+		SELECT T.SCOPEVALUE FROM T_HEALTH_CFG_BUBBLE T 
+	</select>
+	
+	<!-- 查询地市信息 -->
+	<select id="findCityInfo" resultType="CityContrastVo">
+		SELECT ROWNUM ID, T.OBJECTID CITYID,T.OBJECTNAME CITYNAME FROM T_DIC T WHERE T.OBJECTTYPE = 'CITY'
+	</select>
+	
+	<!-- 根据健康度类型查询健康度名称 -->
+	<select id="findHealthNameByType" resultType="CityContrastVo">
+		SELECT T.OBJECTID HEALTHID,T.OBJECTNAME HEALTHNAME,T.LEV FROM T_DIC T WHERE T.OBJECTTYPE = #{0} AND T.LEV IN (1,2)
+	</select>
+	
+	<!-- 根据健康度指标ID和健康度类型查询各地市健康度指标名称和分数  健康度二级和三级指标分数 -->
+	<select id="findHealthNameScoreByHealthId" resultType="CityContrastVo">
+		<![CDATA[
+			SELECT
+			      T1.OBJECTID CITYID,
+			      T1.OBJECTNAME CITYNAME,
+			      T1.HEALTHID HEALTHTWOID,
+			      T1.HEALTHNAME HEALTHTWONAME,
+			      T1.SCORE HEALTHTWOSCORE,
+			      T2.HEALTHID HEALTHTHREEID,
+			      T2.HEALTHNAME HEALTHTHREENAME,
+			      T2.SCORE HEALTHTHREESCORE
+			FROM
+			    ( SELECT 
+			              CTY.OBJECTID,CTY.OBJECTNAME,
+			              NET.HEALTHID,NET.HEALTHNAME,
+			              NVL(NET.SCORE,0) SCORE
+			        FROM
+			             (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+			        LEFT JOIN 
+			             (SELECT
+			                      T.CITYID,T.HEALTHID,
+			                      (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+			                      T.SCORE 
+			               FROM 
+			                      T_HEALTH_INFO T 
+			               WHERE 
+			                      T.HEALTHID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID = #{0} AND OBJECTTYPE = #{1} AND LEV = 2)
+			                 AND  T.HEALTHTYPE = #{1}   
+                      		 AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+			             ) NET
+			             ON 
+			                CTY.OBJECTID = NET.CITYID 
+			        ) T1
+			   JOIN
+			       (SELECT 
+			              CTY.OBJECTID,CTY.OBJECTNAME,
+			              (SELECT PARENNTID FROM T_DIC WHERE OBJECTID = NET.HEALTHID) PARENNTID,
+			              NET.HEALTHID,NET.HEALTHNAME,
+			              NVL(NET.SCORE,0) SCORE
+			        FROM
+			             (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+			        LEFT JOIN 
+			             (SELECT
+			                      T.CITYID,T.HEALTHID,
+			                      (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+			                      T.SCORE 
+			               FROM 
+			                      T_HEALTH_INFO T 
+			               WHERE 
+			                      T.HEALTHID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID = #{0}) AND OBJECTTYPE = #{1} AND LEV = 3)
+			                 AND  T.HEALTHTYPE = #{1}   
+                      		 AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+			             ) NET
+			             ON 
+			                CTY.OBJECTID = NET.CITYID 
+			         ) T2
+			     ON T1.OBJECTID = T2.OBJECTID
+			    AND T1.HEALTHID = T2.PARENNTID
+		 ]]>
+	</select>
+	<!-- 根据健康度指标ID和健康度类型查询各地市健康度指标名称和分数  健康度二级和三级指标分数 -->
+	<select id="findHealthNameScoreByHealthIdOfDay" resultType="CityContrastVo">
+		<![CDATA[
+			SELECT
+			      T1.OBJECTID CITYID,
+			      T1.OBJECTNAME CITYNAME,
+			      T1.HEALTHID HEALTHTWOID,
+			      T1.HEALTHNAME HEALTHTWONAME,
+			      T1.SCORE HEALTHTWOSCORE,
+			      T2.HEALTHID HEALTHTHREEID,
+			      T2.HEALTHNAME HEALTHTHREENAME,
+			      T2.SCORE HEALTHTHREESCORE
+			FROM
+			    ( SELECT 
+			              CTY.OBJECTID,CTY.OBJECTNAME,
+			              NET.HEALTHID,NET.HEALTHNAME,
+			              NVL(NET.SCORE,0) SCORE
+			        FROM
+			             (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+			        LEFT JOIN 
+			             (SELECT
+			                      T.CITYID,T.HEALTHID,
+			                      (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+			                      T.SCORE 
+			               FROM 
+			                      T_HEALTH_INFO_DAY T 
+			               WHERE 
+			                      T.HEALTHID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID = #{0} AND OBJECTTYPE = #{1} AND LEV = 2)
+			                 AND  T.HEALTHTYPE = #{1}   
+                      		 AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+			             ) NET
+			             ON 
+			                CTY.OBJECTID = NET.CITYID 
+			        ) T1
+			   JOIN
+			       (SELECT 
+			              CTY.OBJECTID,CTY.OBJECTNAME,
+			              (SELECT PARENNTID FROM T_DIC WHERE OBJECTID = NET.HEALTHID) PARENNTID,
+			              NET.HEALTHID,NET.HEALTHNAME,
+			              NVL(NET.SCORE,0) SCORE
+			        FROM
+			             (SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY
+			        LEFT JOIN 
+			             (SELECT
+			                      T.CITYID,T.HEALTHID,
+			                      (SELECT D.OBJECTNAME FROM T_DIC D WHERE D.OBJECTID = T.HEALTHID AND D.OBJECTTYPE = #{1}) HEALTHNAME,
+			                      T.SCORE 
+			               FROM 
+			                      T_HEALTH_INFO_DAY T 
+			               WHERE 
+			                      T.HEALTHID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID IN (SELECT OBJECTID FROM T_DIC WHERE PARENNTID = #{0}) AND OBJECTTYPE = #{1} AND LEV = 3)
+			                 AND  T.HEALTHTYPE = #{1}   
+                      		 AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+			             ) NET
+			             ON 
+			                CTY.OBJECTID = NET.CITYID 
+			         ) T2
+			     ON T1.OBJECTID = T2.OBJECTID
+			    AND T1.HEALTHID = T2.PARENNTID
+		 ]]>
+	</select>
+	<select id="getMenuTable" resultType="Tree">
+		SELECT OBJECTNAME NAME, OBJECTID ID, PARENNTID PARENTID, LEV, UNIT
+		FROM T_DIC WHERE OBJECTTYPE = #{type}
+		<if test="lev == 1">
+			AND LEV IN (1, 2)
+		</if>
+		<if test="lev == 2">
+			AND LEV IN (1, 2, 3)
+		</if>
+	</select>
+	
+	<select id="getHealthTable" resultType="Tree">
+		SELECT D.OBJECTNAME NAME, I.VAL, I.SCORE, D.OBJECTID ID, D.PARENNTID PARENTID, D.LEV, D.UNIT
+		FROM (SELECT * FROM T_DIC WHERE OBJECTTYPE = #{type}) D
+		LEFT JOIN 
+		(
+			SELECT HEALTHID,
+                        (CASE
+                          WHEN VAL &lt; 10 THEN
+                           TRIM(TO_CHAR(VAL, '0.00'))
+                          ELSE
+                           TO_CHAR(VAL)
+                        END ) VAL,
+                        SCORE 
+                        FROM T_HEALTH_INFO WHERE HEALTHTYPE = #{type} AND AREA = #{area}
+                        AND COLLECTTIME &gt;= #{starttime} AND COLLECTTIME &lt; #{endtime}
+			<if test="city != ''">
+	        	AND CITY = #{city}
+	        </if>
+		) I ON D.OBJECTID = I.HEALTHID
+	</select>
+	
+<!-- 	<select id="getHealthTableOfDay" resultType="java.util.HashMap"> -->
+<!-- 		SELECT HEALTHID, -->
+<!--                         SCORE  -->
+<!--                         FROM T_HEALTH_INFO_DAY WHERE HEALTHTYPE = #{0} AND rtrim(AREA) = #{1}             -->
+<!-- 	</select> -->
+	<select id="getHealthTableOfDay" resultType="Tree">
+		SELECT D.OBJECTNAME NAME, I.VAL, I.SCORE, D.OBJECTID ID, D.PARENNTID PARENTID, D.LEV, D.UNIT
+		FROM (SELECT * FROM T_DIC WHERE OBJECTTYPE = #{type}) D
+		LEFT JOIN 
+		(
+			SELECT HEALTHID,
+                        (CASE
+                          WHEN VAL &lt; 10 THEN
+                           TRIM(TO_CHAR(VAL, '0.00'))
+                          ELSE
+                           TO_CHAR(VAL)
+                        END ) VAL,
+                        SCORE 
+                        FROM T_HEALTH_INFO_DAY WHERE HEALTHTYPE = #{type} AND rtrim(AREA) = #{area}
+                        AND COLLECTTIME &gt;= #{starttime} AND COLLECTTIME &lt; #{endtime}
+			<if test="city != ''">
+	        	AND CITY = #{city}
+	        </if>
+		) I ON D.OBJECTID = I.HEALTHID
+	</select>
+	<!-- 全国对比 -->
+	<select id="getCountryConstrastList" resultType="CountryContrastVo">
+	<![CDATA[
+		SELECT 
+			       ROWNUM ,
+			       H.*
+			FROM
+			  ( SELECT 
+			           HEALTH.OBJECTNAME province,
+			           HEALTH.SCORE
+			    FROM
+				    (SELECT 
+				            PROVINCE.OBJECTID,PROVINCE.OBJECTNAME,
+				            CASE WHEN NET.SCORE < 10 THEN TRIM(TO_CHAR(NET.SCORE,'0.00')) ELSE NVL(TRIM(TO_CHAR(NET.SCORE,'00.00')),0) END SCORE
+				       FROM
+				           	(SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'PROVINCE' AND CT.OBJECTNAME NOT IN ('钓鱼岛','台湾','香港','澳门')) PROVINCE
+				  LEFT JOIN 
+				           	(SELECT T.PROVINCE,T.SCORE ,T.PROVINCEID FROM t_health_country T WHERE t.healthtype=#{0}
+				           	 AND  T.COLLECTTIME >= #{1} AND COLLECTTIME < #{2}
+				           	
+				           	) NET
+				         ON 
+				            PROVINCE.OBJECTID = NET.PROVINCEID 
+				    ) HEALTH 
+			    ORDER BY HEALTH.SCORE DESC
+			  ) H
+		]]>
+	</select>
+	<!-- 全国对比 -->
+	<select id="getCountryConstrastListOfDay" resultType="CountryContrastVo">
+	<![CDATA[
+		SELECT 
+			       ROWNUM ,
+			       H.*
+			FROM
+			  ( SELECT 
+			           HEALTH.OBJECTNAME province,
+			           HEALTH.SCORE
+			    FROM
+				    (SELECT 
+				            PROVINCE.OBJECTID,PROVINCE.OBJECTNAME,
+				            CASE WHEN NET.SCORE < 10 THEN TRIM(TO_CHAR(NET.SCORE,'0.00')) ELSE NVL(TRIM(TO_CHAR(NET.SCORE,'00.00')),0) END SCORE
+				       FROM
+				           	(SELECT CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'PROVINCE' AND CT.OBJECTNAME != '钓鱼岛') PROVINCE
+				  LEFT JOIN 
+				           	(SELECT T.PROVINCE,T.SCORE ,T.PROVINCEID FROM t_health_country_day T WHERE t.healthtype=#{0}
+				           	 AND  T.COLLECTTIME >= #{1} AND COLLECTTIME < #{2}
+				           	
+				           	) NET
+				         ON 
+				            PROVINCE.OBJECTID = NET.PROVINCEID 
+				    ) HEALTH 
+			    ORDER BY HEALTH.SCORE DESC
+			  ) H
+		]]>
+	</select>
+	
+	<!-- 评估点地市对比 -->
+	<select id="getCityContrast" resultType="AssDimRelevance">
+		select objectid id, objectname name,PARENNTID fatherId from t_dic t  
+		where t.objecttype=#{healthtype} and lev=2
+<!-- 		<if test="objectid=="#{fatherId}></if> -->
+	</select>
+
+	
+	
+	<!--评估地市对比子节点  -->
+	<select id="getCityContrastChild" resultType="AssDimRelevance">
+		 select objectid id, objectname name,lev,PARENNTID fatherId from t_dic t  
+	 	where PARENNTID=#{fatherId}
+	  </select>
+	<!-- 评估地市对比 charts --> 
+	<resultMap type="java.util.HashMap" id="cityCharts">
+		<result property="healthname" column="healthname"/>
+		<result property="healthtype" column="healthtype"/>
+		<result property="score" column="score"/>
+		<result property="city" column="city"/>
+	</resultMap>
+	<select id="getCityConstrastCharts" resultMap="cityCharts">
+		<![CDATA[
+		select t.healthid,t.healthtype,t.score,t.city,t.healthname from t_health_info t 
+		where t.healthid=#{0} 
+		and t.healthtype=#{1}
+		AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+		]]>
+	</select> 
+	<select id="getCityConstrastChartsOfDay" resultMap="cityCharts">
+		<![CDATA[
+		select t.healthid,t.healthtype,t.score,t.city,t.healthname from t_health_info_day t 
+		where t.healthid=#{0} 
+		and t.healthtype=#{1}
+		AND  T.COLLECTTIME >= #{2} AND COLLECTTIME < #{3}
+		]]>
+	</select> 
+	  <!-- 全省纵览 -->
+	<resultMap type="java.util.HashMap" id="provinceViewResult">
+		<result property="healthname" column="HEALTHNAME"/>
+		<result property="score" column="SCORE"/>
+		<result property="perc" column="PERC"/>
+		<result property="parentid" column="PARENNTID"/>
+	</resultMap>
+	<select id="getprovinceView" resultMap="provinceViewResult">
+		<![CDATA[
+		SELECT 
+		       NOWTIME.OBJECTNAME HEALTHNAME,
+		       NOWTIME.SCORE,
+		       DECODE(NVL(NOWTIME.SCORE, 0) - NVL(BEFORETIME.SCORE, 0),
+		              0,
+		              0,
+		              DECODE(NVL(BEFORETIME.SCORE, 0),
+		                     0,
+		                     100,
+		                     ROUND((NVL(NOWTIME.SCORE, 0) - NVL(BEFORETIME.SCORE, 0)) /
+		                           ABS(NVL(BEFORETIME.SCORE, 0)) * 100,
+		                           2))) PERC,
+		       NOWTIME.PARENNTID
+		  FROM (SELECT T.COLLECTTIME, T.SCORE, D.OBJECTID, D.OBJECTNAME, D.PARENNTID
+				    FROM (SELECT *
+				            FROM T_HEALTH_INFO_MONTH T
+				           WHERE T.COLLECTTIME = TO_DATE((SELECT ADD_MONTHS(#{starttime},-1) FROM DUAL))) T
+				   RIGHT JOIN (SELECT * FROM T_DIC
+				                WHERE OBJECTTYPE = 'HEALTH_INTERNET'
+				                  AND (LEV = 1 OR LEV = 2)) D
+				      ON D.OBJECTID = T.HEALTHID) BEFORETIME,       
+		       (SELECT T.COLLECTTIME, T.SCORE, D.OBJECTID, D.OBJECTNAME, D.PARENNTID
+		          FROM T_HEALTH_INFO_MONTH T
+		         RIGHT JOIN (SELECT * FROM T_DIC
+		                     WHERE OBJECTTYPE = #{healthType}
+		                       AND (LEV = 1 OR LEV = 2)) D        
+		            ON D.OBJECTID = T.HEALTHID
+		           AND T.COLLECTTIME >= #{starttime}
+		           AND T.COLLECTTIME < #{endtime}) NOWTIME
+		 WHERE BEFORETIME.OBJECTID = NOWTIME.OBJECTID
+		 ORDER BY NOWTIME.OBJECTID
+		]]>
+	</select>
+	<select id="getprovinceViewOfDay" resultMap="provinceViewResult">
+		<![CDATA[
+		SELECT 
+		       NOWTIME.OBJECTNAME HEALTHNAME,
+		       NOWTIME.SCORE,
+		       DECODE(NVL(NOWTIME.SCORE, 0) - NVL(BEFORETIME.SCORE, 0),
+		              0,
+		              0,
+		              DECODE(NVL(BEFORETIME.SCORE, 0),
+		                     0,
+		                     100,
+		                     ROUND((NVL(NOWTIME.SCORE, 0) - NVL(BEFORETIME.SCORE, 0)) /
+		                           ABS(NVL(BEFORETIME.SCORE, 0)) * 100,
+		                           2))) PERC,
+		       NOWTIME.PARENNTID
+		  FROM (SELECT T.COLLECTTIME, T.SCORE, D.OBJECTID, D.OBJECTNAME, D.PARENNTID
+				    FROM (SELECT *
+				            FROM T_HEALTH_INFO_DAY T
+				           WHERE T.COLLECTTIME = TO_DATE((SELECT #{starttime}-1 FROM DUAL))) T
+				   RIGHT JOIN (SELECT * FROM T_DIC
+				                WHERE OBJECTTYPE = 'HEALTH_INTERNET'
+				                  AND (LEV = 1 OR LEV = 2)) D
+				      ON D.OBJECTID = T.HEALTHID) BEFORETIME,      
+		       (SELECT T.COLLECTTIME, T.SCORE, D.OBJECTID, D.OBJECTNAME, D.PARENNTID
+		          FROM T_HEALTH_INFO_DAY T
+		         RIGHT JOIN (SELECT * FROM T_DIC
+		                     WHERE OBJECTTYPE = #{healthType}
+		                       AND (LEV = 1 OR LEV = 2)) D        
+		            ON D.OBJECTID = T.HEALTHID
+		           AND T.COLLECTTIME >= #{starttime}
+		           AND T.COLLECTTIME < #{endtime}) NOWTIME
+		 WHERE BEFORETIME.OBJECTID = NOWTIME.OBJECTID
+		 ORDER BY NOWTIME.OBJECTID
+		]]>
+	</select>
+	<!-- 竟争对手对比  -->
+	<resultMap type="java.util.HashMap" id="operViewResult">
+		<result property="opername" column="opername"/>
+		<result property="score" column="score"/>
+		<result property="operid" column="operid"/>
+	</resultMap>
+	<select id="getOperView" resultMap="operViewResult">
+		<![CDATA[
+		select t.opername,t.score,t.operid from t_health_oper t
+		where   T.COLLECTTIME >= #{0} AND T.COLLECTTIME < #{1}
+		
+		]]>
+	</select>
+		<select id="getOperViewOfDay" resultMap="operViewResult">
+		<![CDATA[
+		select t.opername,t.score,t.operid from t_health_oper_day t
+		where   T.COLLECTTIME >= #{0} AND T.COLLECTTIME < #{1}
+		
+		]]>
+	</select>
+	
+	
+	<!-- 执行导出WORD的数据汇聚存储 -->
+	<select id="proWordExportDay" parameterType="java.util.Map" statementType="CALLABLE">
+		<![CDATA[
+		{call fm_health_word_data_d(#{impDate,mode=IN,jdbcType=DATE})}
+		]]>
+	</select>
+	
+	<!-- WORD数据字段Map -->
+	<resultMap type="java.util.HashMap" id="healthWordData">		  
+		<result property="idcDnFlow" column="IDC_DN_FLOW"/>        <!-- 一、互联网流量本网率 表1，业务-IDC，下行流量（GB） -->
+		<result property="idcRate" column="IDC_RATE"/>             <!-- 一、互联网流量本网率 表1，业务-IDC，占比 -->
+		<result property="bwlNtt" column="BWL_NTT"/>               <!-- 一、互联网流量本网率 表1，本网率（不加铁通） -->
+		<result property="bwlTt" column="BWL_TT"/>                 <!-- 一、互联网流量本网率 表1，本网率（加铁通）-->
+		<result property="cacheDnFlow" column="CACHE_DN_FLOW"/>    <!-- 一、互联网流量本网率 表1，业务-Cache，下行流量（GB）-->
+		<result property="cacheRate" column="CACHE_RATE"/>         <!-- 一、互联网流量本网率 表1，业务-Cache，占比-->
+		<result property="ydDnFlow" column="YD_DN_FLOW"/>          <!-- 一、互联网流量本网率 表1，业务-移动，下行流量（GB）-->
+		<result property="ydRate" column="YD_RATE"/>               <!-- 一、互联网流量本网率 表1，业务-移动，占比-->
+		<result property="dxDnFlow" column="DX_DN_FLOW"/>          <!-- 一、互联网流量本网率 表1，业务-电信，下行流量（GB）-->
+		<result property="dxRate" column="DX_RATE"/>               <!-- 一、互联网流量本网率 表1，业务-电信，占比-->
+		<result property="ltDnFlow" column="LT_DN_FLOW"/>          <!-- 一、互联网流量本网率 表1，业务-联通，下行流量（GB）-->
+		<result property="ltRate" column="LT_RATE"/>               <!-- 一、互联网流量本网率 表1，业务-联通，占比-->
+		<result property="ttDnFlow" column="TT_DN_FLOW"/>          <!-- 一、互联网流量本网率 表1，业务-铁通，下行流量（GB）-->
+		<result property="ttRate" column="TT_RATE"/>               <!-- 一、互联网流量本网率 表1，业务-铁通，占比-->
+		<result property="qtDnFlow" column="QT_DN_FLOW"/>          <!-- 一、互联网流量本网率 表1，业务-其他，下行流量（GB）-->
+		<result property="qtRate" column="QT_RATE"/>               <!-- 一、互联网流量本网率 表1，业务-其他，占比-->
+		<result property="totalDnFlow" column="TOTAL_DN_FLOW"/>    <!-- 一、互联网流量本网率 表1，总计，下行流量（GB）-->
+		<result property="idcZlCacheDnFlow" column="IDC_ZL_CACHE_DN_FLOW"/>  <!-- 一、互联网流量本网率 表1，IDC+直连+缓存占比，下行流量（GB）-->
+		<result property="idcZlCacheRate" column="IDC_ZL_CACHE_RATE"/>       <!-- 一、互联网流量本网率 表1，IDC+直连+缓存占比，占比-->
+		<result property="cacheDnFlow2" column="CACHE_DN_FLOW_2"/>           <!-- 一、互联网流量本网率 表2，业务-Cache，下行流量（GB）-->
+		<result property="cacheRate2" column="CACHE_RATE_2"/>                <!-- 一、互联网流量本网率 表2，业务-Cache，占比-->
+		<result property="ydZlDnFlow" column="YD_ZL_DN_FLOW"/>               <!-- 一、互联网流量本网率 表2，业务-移动-直连，下行流量（GB）-->
+		<result property="ydZlRate" column="YD_ZL_RATE"/>                    <!-- 一、互联网流量本网率 表2，业务-移动-直连，占比-->
+		<result property="ydIdcDnFlow" column="YD_IDC_DN_FLOW"/>             <!-- 一、互联网流量本网率 表2，业务-移动-IDC，下行流量（GB）-->
+		<result property="ydIdcRate" column="YD_IDC_RATE"/>                  <!-- 一、互联网流量本网率 表2，业务-移动-IDC，占比-->
+		<result property="p2pYxhcb" column="P2P_YXHCB"/>                     <!-- 二、集团关注Cache指标 表1，P2P Cache有效缓存比-->
+		<result property="webYxhcb" column="WEB_YXHCB"/>                     <!-- 二、集团关注Cache指标 表1，Web Cache有效缓存比-->
+		
+		<!-- 废弃不用了 -->
+		<result property="ydWebDnSuccRate" column="YD_WEB_DN_SUCC_RATE"/>            <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动） 网页下载成功率-->
+		<result property="ydAvgDnTimedelay" column="YD_AVG_DN_TIMEDELAY"/>           <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动）下载平均时延(秒)-->
+		<result property="ydAvgDnSpeed" column="YD_AVG_DN_SPEED"/>                   <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动）平均下载速率(千字节/秒)-->
+		<result property="ydFisrtpageTimedelay" column="YD_FISRTPAGE_TIMEDELAY"/>    <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动）网站首页打开时延(秒)-->
+		<result property="ydVideoFfTime" column="YD_VIDEO_FF_TIME"/>                 <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动）视频首帧显示时长(秒)-->
+		<result property="ydSvideoKfNum" column="YD_SVIDEO_KF_NUM"/>                 <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（移动） 单段视频平均卡顿次数-->
+		<result property="dxWebDnSuccRate" column="DX_WEB_DN_SUCC_RATE"/>            <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信） 网页下载成功率-->
+		<result property="dxAvgDnTimedelay" column="DX_AVG_DN_TIMEDELAY"/>           <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信）下载平均时延(秒)-->
+		<result property="dxAvgDnSpeed" column="DX_AVG_DN_SPEED"/>                   <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信）平均下载速率(千字节/秒)-->
+		<result property="dxFisrtpageTimedelay" column="DX_FISRTPAGE_TIMEDELAY"/>    <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信）网站首页打开时延(秒)-->
+		<result property="dxVideoFfTime" column="DX_VIDEO_FF_TIME"/>                 <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信）视频首帧显示时长(秒)-->
+		<result property="dxSvideoKfNum" column="DX_SVIDEO_KF_NUM"/>                 <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信） 单段视频平均卡顿次数-->
+		<result property="wlanClickBwl" column="WLAN_CLICK_BWL"/>                    <!-- 三、网络运行指标情况 6、互联网拨测指标 表，TOP550网页测试（电信） 单段视频平均卡顿次数 文字，无线用户点击本网率-->
+		<!-- end -->
+		
+		<!-- add 热点内容拨测 -->
+		<result property="standardWebRate" column="STANDARD_WEB_RATE"/>                <!-- 三、网络运行指标情况 6、互联网拨测指标 表，热点内容拨测，TOP1000网站达标率-->
+		<result property="videoQuality" column="VIDEO_QUALITY"/>                    <!-- 三、网络运行指标情况 6、互联网拨测指标 表，热点内容拨测，TOP15视频质量得分-->
+		<!-- end -->
+	</resultMap>
+	
+	<!-- 查找WORD数据SQL -->
+	<select id="getWordDataForDate" resultMap="healthWordData">
+		<![CDATA[
+		 SELECT idc_dn_flow, idc_rate, bwl_ntt, bwl_tt, cache_dn_flow, cache_rate,
+		       yd_dn_flow, yd_rate, dx_dn_flow, dx_rate, lt_dn_flow, lt_rate,
+		       tt_dn_flow, tt_rate, qt_dn_flow, qt_rate, total_dn_flow,
+		       idc_zl_cache_dn_flow, idc_zl_cache_rate, cache_dn_flow_2, cache_rate_2,
+		       yd_zl_dn_flow, yd_zl_rate, yd_idc_dn_flow, yd_idc_rate, p2p_yxhcb,
+		       web_yxhcb, yd_web_dn_succ_rate, yd_avg_dn_timedelay, yd_avg_dn_speed,
+		       yd_fisrtpage_timedelay, yd_video_ff_time, yd_svideo_kf_num,
+		       dx_web_dn_succ_rate, dx_avg_dn_timedelay, dx_avg_dn_speed,
+		       dx_fisrtpage_timedelay, dx_video_ff_time, dx_svideo_kf_num,
+		       wlan_click_bwl, standard_web_rate, video_quality
+		  FROM fm_export_word_data
+		  where stat_date = #{0}
+		]]>
+	</select>
+	
+	<!-- 根据时间粒度、健康度指标ID、健康度类型查询各地市健康度指标名称和分数 -->
+	<select id="findHealthNameScoreByTime" resultType="CityContrastVo">
+		 SELECT
+               DIC.CITYID,
+			   DIC.CITYNAME,
+               DIC.OBJECTID HEALTHID,
+			   DIC.OBJECTNAME HEALTHNAME,
+			   DIC.PARENNTID PARENTID,
+               H.SCORE SCORE
+          FROM 
+              (
+               SELECT 
+                     CTY.OBJECTID CITYID,
+                     CTY.OBJECTNAME CITYNAME,
+                     D.OBJECTID,
+                     D.OBJECTNAME,
+                     D.PARENNTID
+                FROM
+                     (SELECT 'a' ID, CT.OBJECTID, CT.OBJECTNAME FROM T_DIC CT WHERE CT.OBJECTTYPE = 'CITY') CTY,
+                     (SELECT 'a' ID, OBJECTID,OBJECTNAME,PARENNTID FROM T_DIC WHERE OBJECTTYPE = #{healthType}  
+                     <if test="healthId != null">
+                     	AND PARENNTID = #{healthId} AND LEV = 3
+                     </if>
+                     <if test="healthId == null">
+                     	AND LEV IN (2,3)
+                     </if>
+                     ) D
+                WHERE
+                     CTY.ID = D.ID
+               ) DIC
+               
+     LEFT JOIN (
+               SELECT 
+                      * 
+                FROM 
+               	 <if test="timeType == 'day'">
+				     T_HEALTH_INFO_DAY
+			  	 </if>
+				 <if test="timeType == 'month'">
+				     T_HEALTH_INFO
+				 </if>
+               WHERE 
+                     AREA = '市级'
+                  AND
+                     HEALTHTYPE = #{healthType} 
+                  <if test="timeType == 'day' || timeType == 'month'">
+				  AND COLLECTTIME &gt;= #{startTime}
+				  AND COLLECTTIME &lt; #{endTime}
+		  		  </if>
+                ) H 
+            ON DIC.CITYID = H.CITYID
+            AND DIC.OBJECTID = H.HEALTHID
+	</select>
+	
+	<!-- 根据时间粒度、健康度指标ID、健康度类型查询健康度分数和指标值 -->
+	<select id="findHealthScoreKpiByType" resultType="java.util.HashMap">
+		SELECT
+	          TO_CHAR(D.XDATA,'YYYY/MM/DD') LABEL,
+			  D.OBJECTID,
+			  NVL(H.SCORE,0) SCORE,
+			  NVL(H.VAL,0) VAL
+		 FROM
+			 (
+			 <if test="timeType == 'day' || timeType == 'week'">
+			 SELECT
+					T.XDATA,
+					D.OBJECTID
+				FROM
+					(SELECT 'A' ID, TRUNC(TO_DATE(#{endTime},'YYYY-MM-DD') - (ROWNUM-1),'DD') XDATA FROM DUAL 
+					 CONNECT BY ROWNUM &lt;=(SELECT TO_DATE(#{endTime},'YYYY-MM-DD') - TO_DATE(#{startTime},'YYYY-MM-DD') FROM DUAL)+1
+			 </if>
+			 <if test="timeType == 'month'">
+			 SELECT T.XDATA, 
+			 		D.OBJECTID
+               FROM 
+               		(SELECT 'A' ID,TRUNC(ADD_MONTHS(TO_DATE(#{startTime}, 'YYYY-MM-DD'), ROWNUM - 1), 'MM') XDATA FROM DUAL
+					CONNECT BY ROWNUM &lt;= (SELECT MONTHS_BETWEEN(TO_DATE(#{endTime}, 'YYYY-MM-DD'),TO_DATE(#{startTime}, 'YYYY-MM-DD')) FROM DUAL)
+			 </if>	 
+					 ) T
+      	   LEFT JOIN
+					(SELECT 'A' ID, OBJECTID,OBJECTNAME,PARENNTID FROM T_DIC WHERE OBJECTTYPE = #{healthType} 
+					<if test="num == 1">
+						AND LEV IN (1, 2)
+					</if>
+					<if test="num == 2">
+						AND LEV = 3
+					</if>
+					<if test="healthId != null">
+					AND OBJECTID = #{healthId} 
+					</if>
+					) D
+				  ON T.ID = D.ID
+			 ) D
+	LEFT JOIN
+			   <if test="timeType == 'day' || timeType == 'week'">
+			   (SELECT HEALTHID,HEALTHNAME,SCORE,VAL,COLLECTTIME
+			  		FROM T_HEALTH_INFO_DAY 
+			  		WHERE
+			        	HEALTHTYPE = #{healthType}
+			 	) H
+			 	ON
+		     		D.XDATA = H.COLLECTTIME
+		 		AND
+		     		D.OBJECTID = H.HEALTHID
+			   </if>
+			   <!-- <if test="timeType == 'week'">
+			   (SELECT HEALTHID,HEALTHNAME,SCORE,VAL,START_TIME,END_TIME 
+			   		FROM T_HEALTH_INFO_WEEK 
+			   		WHERE 
+			   			HEALTHTYPE = #{healthType}
+			   		AND
+			   			START_TIME = TO_DATE(#{startTime},'YYYY-MM-DD') 
+			   		AND 
+			   			END_TIME = TO_DATE(#{endTime},'YYYY-MM-DD')
+			   ) H
+			 	ON
+		     		D.OBJECTID = H.HEALTHID
+			   </if> -->
+			   <if test="timeType == 'month'">
+			   (SELECT HEALTHID,HEALTHNAME,SCORE,VAL,COLLECTTIME
+			  		FROM T_HEALTH_INFO_MONTH 
+			  		WHERE
+			        	HEALTHTYPE = #{healthType}
+			 	) H
+			 	ON
+		     		D.XDATA = H.COLLECTTIME
+		 		AND
+		     		D.OBJECTID = H.HEALTHID
+			  		 
+			   </if>
+		 ORDER BY D.OBJECTID,D.XDATA ASC
+	</select>
+	
+	<!-- 根据SQL字符串查询字段表信息 -->
+	<select id="findDICInfo" resultType="java.util.HashMap" >
+		${sql}
+	</select>
+	
+	<!-- 指标详情 TOP7 --> 
+	<resultMap type="java.util.HashMap" id="kpiChart">
+		<result property="score" column="score"/>
+		<result property="city" column="city"/>
+		<result property="kpiname" column="kpiname"/>
+		<result property="VAL" column="VAL"/>
+		<result property="S1" column="S1"/>
+		<result property="S2" column="S2"/>
+		<result property="S3" column="S3"/>
+		<result property="S4" column="S4"/>
+		<result property="S5" column="S5"/>
+	</resultMap>
+	<select id="getKPIDetailTop7" resultMap="kpiChart">
+		<if test="kpiId == '1239'">
+			<!-- SELECT H.DELAY SCORE, H.PROVINCE CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETQOS_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.QOSLTEINTERNETXD01,2) SCORE, H.OBJ_PROVINCE CITY
+			   FROM (SELECT OBJ_PROVINCE, ROUND(AVG(QOSLTEINTERNETXD01), 2) QOSLTEINTERNETXD01
+			           FROM RES_PUTIAN_HEALTH_QOSLTEXD
+			          WHERE SUMSTARTTIME &gt;= #{startTime}
+			            AND SUMSTARTTIME &lt; #{endTime}
+			             GROUP BY OBJ_PROVINCE
+			          ORDER BY QOSLTEINTERNETXD01 DESC) H
+			  WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1240'">
+			<!-- SELECT H.PACKETLOSS SCORE, H.PROVINCE CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETQOS_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.PACKETLOSS DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.QOSLTEINTERNETXD03,2) SCORE, H.OBJ_PROVINCE CITY
+			   FROM (SELECT OBJ_PROVINCE, ROUND(AVG(QOSLTEINTERNETXD03), 2) QOSLTEINTERNETXD03
+			           FROM RES_PUTIAN_HEALTH_QOSLTEXD
+			          WHERE SUMSTARTTIME &gt;= #{startTime}
+			            AND SUMSTARTTIME &lt; #{endTime}
+			             GROUP BY OBJ_PROVINCE
+			          ORDER BY QOSLTEINTERNETXD03 DESC) H
+			  WHERE ROWNUM &lt;= 7
+		</if>
+		<!-- <if test="kpiId == '1241'"> -->
+			<!-- SELECT H.USERATIO SCORE, H.LINKNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_LINKRATE_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{startTime} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{endTime} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.USERATIO DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			<!-- SELECT ROUND(H.VALUEAVG, 2) SCORE, H.LINK_DESCRIPTION CITY
+			  FROM (SELECT LOCAL_INTERFACE,
+			               MAX(LINK_DESCRIPTION) LINK_DESCRIPTION,               
+			               AVG(VALUEAVG) VALUEAVG
+			          FROM PM_HOU_Z_RESLINK@NMS P, RES_LINK@NMS L
+			         WHERE TIME_ID &gt;= #{startTimeStr} || '00'
+			           AND TIME_ID &lt; #{endTimeStr} || '00'
+			           AND SUBSTR(TIME_ID, -2) = '20'
+			           AND KPI_NO = 10103016007
+			           AND P.KBP = L.RES_ID
+			           AND L.CONNDIRECTION = 33
+			         GROUP BY LOCAL_INTERFACE
+			         ORDER BY VALUEAVG DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if> -->
+		<if test="kpiId == '1245'">
+			<!-- SELECT T.KPINAME CITY, T.VAL SCORE, T.PERC PERC
+  			FROM T_HEALTH_CONTENTRATE_MONTH T
+ 			WHERE T.COLLECTTIME &gt;= #{startTime} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{endTime} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/ -->
+			SELECT  ROUND((NVL(SUM(F2),0)+NVL(SUM(F3),0)+NVL(SUM(F4),0)+NVL(SUM(F5),0))*100/SUM(F1),2) VAL,
+					ROUND(SUM(F2)/1000/1000/1000/1000,2) S1,	/*"IDC服务本省流量G"*/
+			        ROUND(SUM(F3)/1000/1000/1000/1000,2) S2,	/*"WEBCACHE流量G"*/
+			        ROUND(SUM(F4)/1000/1000/1000/1000,2) S3,	/*"P2PCACHE流量G"*/
+			        ROUND(SUM(F5)/1000/1000/1000/1000,2) S4,	/*"铁通流量G"*/
+			        ROUND(SUM(F1)/1000/1000/1000/1000,2) S5	/*"地市下行总流量G"*/
+			 FROM
+			 (
+			  SELECT LINK_DESCRIPTION,LOCAL_INTERFACE,TIME_ID,
+			         CASE WHEN CONNDIRECTION_NET = 33 THEN  VALUESUM END F1,
+			         CASE WHEN CONNDIRECTION_NET = 35 THEN  VALUESUM END F2,
+			         CASE WHEN CONNDIRECTION_NET = 36 THEN  VALUESUM END F3,
+			         CASE WHEN CONNDIRECTION_NET = 37 THEN  VALUESUM END F4,
+			         CASE WHEN CONNDIRECTION_NET = 45 THEN  VALUESUM END F5
+			FROM PM_DAY_Z_RESLINK@NMS P,RES_LINK@NMS L
+			WHERE TIME_ID &gt;= #{startTimeStr}
+			 AND TIME_ID &lt; #{endTimeStr}
+			 AND KPI_NO = 10103016003
+			 AND P.KBP = L.RES_ID
+			 AND L.CONNDIRECTION_NET  IN(33,35,36,37,45) /*33中继链路 35 服务本省 --36WEBCACHE 37 P2PCACHE*/
+			 )
+		</if>
+		<if test="kpiId == '1246'">
+			<!-- SELECT H.DELAY SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETDELAY_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.WEBXD02,2) SCORE, H.WEBNAME CITY
+			  FROM (SELECT WEBNAME, ROUND(AVG(WEBXD02),2) WEBXD02
+			          FROM RES_PUTIAN_HEALTH_WEBXD
+			         WHERE SUMSTARTTIME &gt;= #{startTime}
+			           AND SUMSTARTTIME &lt; #{endTime}
+			           GROUP BY WEBNAME
+			         ORDER BY WEBXD02 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1247'">
+			<!-- SELECT H.DELAY SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_HTTPVIDEO_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.VIDEO01,2) SCORE, H.ICP CITY
+			  FROM (SELECT ICP,  ROUND(AVG(VIDEO01),2) VIDEO01
+			          FROM RES_PUTIAN_HEALTH_VIDEO T
+			         WHERE SUMSTARTTIME &gt;= #{startTime}
+			           AND SUMSTARTTIME &lt; #{endTime}
+			           GROUP BY ICP
+			         ORDER BY VIDEO01 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1248'">
+			<!-- SELECT H.PAUSENUMBER SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_HTTPVIDEO_MONTH T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.PAUSENUMBER DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.VIDEO02,2) SCORE, H.ICP CITY
+			  FROM (SELECT ICP,  ROUND(AVG(VIDEO02),2) VIDEO02
+			          FROM RES_PUTIAN_HEALTH_VIDEO T
+			         WHERE SUMSTARTTIME &gt;= #{startTime}
+			           AND SUMSTARTTIME &lt; #{endTime}
+			           GROUP BY ICP
+			         ORDER BY VIDEO02 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+	</select> 
+	<select id="getKPIDetailTop7OfDay" resultMap="kpiChart">
+		<if test="kpiId == '1239'">
+			<!-- SELECT H.DELAY SCORE, H.PROVINCE CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETQOS_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			 SELECT ROUND(H.QOSLTEINTERNETXD01,2) SCORE, H.OBJ_PROVINCE CITY
+			   FROM (SELECT SUMSTARTTIME, OBJ_PROVINCE, QOSLTEINTERNETXD01
+			           FROM RES_PUTIAN_HEALTH_QOSLTEXD
+			          WHERE SUMSTARTTIME &gt;= #{startTime}
+			            AND SUMSTARTTIME &lt; #{endTime}
+			          ORDER BY QOSLTEINTERNETXD01 DESC) H
+			  WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1240'">
+			<!-- SELECT H.PACKETLOSS SCORE, H.PROVINCE CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETQOS_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.PACKETLOSS DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.QOSLTEINTERNETXD03,2) SCORE, H.OBJ_PROVINCE CITY
+			   FROM (SELECT SUMSTARTTIME, OBJ_PROVINCE, QOSLTEINTERNETXD03
+			           FROM RES_PUTIAN_HEALTH_QOSLTEXD
+			          WHERE SUMSTARTTIME &gt;= #{startTime}
+			            AND SUMSTARTTIME &lt; #{endTime}
+			          ORDER BY QOSLTEINTERNETXD03 DESC) H
+			  WHERE ROWNUM &lt;= 7
+		</if>
+		<!-- <if test="kpiId == '1241'"> -->
+			<!-- SELECT H.USERATIO SCORE, H.LINKNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_LINKRATE_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.USERATIO DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			<!-- SELECT ROUND(H.VALUEAVG, 2) SCORE, H.LINK_DESCRIPTION CITY
+			  FROM (SELECT LINK_DESCRIPTION,
+			               LOCAL_INTERFACE,
+			               TIME_ID,
+			               VALUEAVG,
+			               VALUEMAX
+			          FROM PM_HOU_Z_RESLINK@NMS P, RES_LINK@NMS L
+			         WHERE TIME_ID &gt;= #{startTimeStr} || '00'
+			           AND TIME_ID &lt;= #{endTimeStr} || '59'
+			           AND SUBSTR(TIME_ID, -2) = '20'
+			           AND KPI_NO = 10103016007
+			           AND P.KBP = L.RES_ID
+			           AND L.CONNDIRECTION = 33
+			         ORDER BY VALUEAVG DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if> -->
+		<if test="kpiId == '1245'">
+			<!-- SELECT T.KPINAME KPINAME, T.VAL SCORE, T.PERC PERC
+  			FROM T_HEALTH_CONTENTRATE_DAY T
+ 			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/ -->
+			SELECT  ROUND((NVL(SUM(F2),0)+NVL(SUM(F3),0)+NVL(SUM(F4),0)+NVL(SUM(F5),0))*100/SUM(F1),2) VAL,
+					ROUND(SUM(F2)/1000/1000/1000/1000,2) S1,	/*"IDC服务本省流量G"*/
+			        ROUND(SUM(F3)/1000/1000/1000/1000,2) S2,	/*"WEBCACHE流量G"*/
+			        ROUND(SUM(F4)/1000/1000/1000/1000,2) S3,	/*"P2PCACHE流量G"*/
+			        ROUND(SUM(F5)/1000/1000/1000/1000,2) S4,	/*"铁通流量G"*/
+			        ROUND(SUM(F1)/1000/1000/1000/1000,2) S5	/*"地市下行总流量G"*/
+			 FROM
+			 (
+			  SELECT LINK_DESCRIPTION,LOCAL_INTERFACE,TIME_ID,
+			         CASE WHEN CONNDIRECTION_NET = 33 THEN  VALUESUM END F1,
+			         CASE WHEN CONNDIRECTION_NET = 35 THEN  VALUESUM END F2,
+			         CASE WHEN CONNDIRECTION_NET = 36 THEN  VALUESUM END F3,
+			         CASE WHEN CONNDIRECTION_NET = 37 THEN  VALUESUM END F4,
+			         CASE WHEN CONNDIRECTION_NET = 45 THEN  VALUESUM END F5
+			FROM PM_DAY_Z_RESLINK@NMS P,RES_LINK@NMS L
+			WHERE TIME_ID &gt;= #{startTimeStr}
+			 AND TIME_ID &lt;= #{endTimeStr}
+			 AND KPI_NO = 10103016003
+			 AND P.KBP = L.RES_ID
+			 AND L.CONNDIRECTION_NET  IN(33,35,36,37,45) /*33中继链路 35 服务本省 --36WEBCACHE 37 P2PCACHE*/
+			 )
+		</if>
+		<if test="kpiId == '1246'">
+			<!-- SELECT H.DELAY SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_NETDELAY_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.WEBXD02,2) SCORE, H.WEBNAME CITY
+			  FROM (SELECT SUMSTARTTIME, WEBNAME, WEBXD02
+			          FROM RES_PUTIAN_HEALTH_WEBXD
+			         WHERE SUMSTARTTIME &gt;= #{startTime}
+			           AND SUMSTARTTIME &lt; #{endTime}
+			         ORDER BY WEBXD02 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1247'">
+			<!-- SELECT H.DELAY SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_HTTPVIDEO_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.DELAY DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.VIDEO01,2) SCORE, H.ICP CITY
+			  FROM (select sumstarttime, ICP, VIDEO01
+			          from RES_PUTIAN_HEALTH_VIDEO t
+			         where sumstarttime &gt;= #{startTime}
+			           and sumstarttime &lt; #{endTime}
+			         ORDER BY VIDEO01 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+		<if test="kpiId == '1248'">
+			<!-- SELECT H.PAUSENUMBER SCORE, H.WEBNAME CITY
+			FROM (SELECT *
+			FROM T_HEALTH_HTTPVIDEO_DAY T
+			WHERE T.COLLECTTIME &gt;= #{1} /*TO_DATE('2015-06-01', 'YYYY-MM-DD')*/
+			AND T.COLLECTTIME &lt; #{2} /*TO_DATE('2015-07-01', 'YYYY-MM-DD')*/
+			ORDER BY T.PAUSENUMBER DESC) H
+			WHERE ROWNUM &lt;= 7 -->
+			SELECT ROUND(H.VIDEO02,2) SCORE, H.ICP CITY
+			  FROM (select sumstarttime, ICP, VIDEO02
+			          from RES_PUTIAN_HEALTH_VIDEO t
+			         where sumstarttime &gt;= #{startTime}
+			           and sumstarttime &lt; #{endTime}
+			         ORDER BY VIDEO02 DESC) H
+			 WHERE ROWNUM &lt;= 7
+		</if>
+	</select> 
+	
+	<select id="getUserDefinedInfo" resultType="java.util.HashMap">
+		<!-- <if test="pageSize > 0 and pageNo > 0">
+			SELECT *
+					FROM (SELECT *
+					FROM (SELECT O.*, ROW_NUMBER() OVER(ORDER BY COLLECTTIME DESC) AS
+					"ROW_NUMBER"
+			FROM (
+		</if> -->
+		SELECT TO_CHAR(H.COLLECTTIME,'YYYY-MM-DD') COLLECTTIME,
+		       D.OBJECTID KPIID,
+		       D.OBJECTNAME  KPINAME,
+		       D.COLNAME,
+		       H.SCORE,
+		       H.VAL
+		  FROM (SELECT 'col'||ROWNUM COLNAME,T.OBJECTID,T.OBJECTNAME KPINAME,
+		(SELECT T.OBJECTNAME FROM T_DIC A WHERE A.OBJECTTYPE = #{healthType} AND A.OBJECTID = T.PARENNTID) OBJECTNAME 
+		        FROM T_DIC T WHERE T.OBJECTTYPE = #{healthType} 
+		        AND T.OBJECTID = #{kpiId} OR T.PARENNTID = #{kpiId}
+		        ORDER BY T.OBJECTID) D
+		  LEFT JOIN (SELECT *
+		  			<if test="timeType == 'day'">
+		  				FROM T_HEALTH_INFO_DAY
+		  			</if>
+		  			<if test="timeType == 'month'">
+		  				FROM T_HEALTH_INFO_MONTH
+		  			</if>
+		              WHERE COLLECTTIME &gt;= #{starttime}-1
+		                AND COLLECTTIME &lt;= #{endtime}) H
+		    ON D.OBJECTID = H.HEALTHID
+		<!-- <if test="pageSize > 0 and pageNo > 0">
+				)
+			O) P
+		WHERE P."ROW_NUMBER" &gt; (${pageNo}-1)*${pageSize}) Q WHERE ROWNUM &lt;= ${pageSize}
+		</if> -->
+		ORDER BY  COLLECTTIME,KPIID
+	</select>
+	<select id="getExitHealthDetail" resultType="java.util.HashMap">
+		SELECT TO_CHAR(H.COLLECTTIME,'YYYY-MM-DD') COLLECTTIME,
+		       D.OBJECTID KPIID,
+		       D.OBJECTNAME  KPINAME,
+		       D.COLNAME,
+		       H.VAL
+		  FROM (SELECT 'col'||ROWNUM COLNAME,T.OBJECTID,T.OBJECTNAME KPINAME,
+		(SELECT T.OBJECTNAME FROM T_DIC A WHERE A.OBJECTTYPE = #{healthType} AND A.OBJECTID = T.PARENNTID) OBJECTNAME 
+		        FROM T_DIC T WHERE T.OBJECTTYPE = #{healthType} 
+		        AND T.PARENNTID = #{kpiId}
+		        ORDER BY T.OBJECTID) D
+		  LEFT JOIN (SELECT *
+		  			<if test="timeType == 'day'">
+		  				FROM T_HEALTH_INFO_DAY
+		  			</if>
+		  			<if test="timeType == 'month'">
+		  				FROM T_HEALTH_INFO_MONTH
+		  			</if>
+		              WHERE COLLECTTIME &gt;= #{starttime}
+		                AND COLLECTTIME &lt;= #{endtime}) H
+		    ON D.OBJECTID = H.HEALTHID
+		ORDER BY  COLLECTTIME,KPIID
+	</select>
+	<select id="getUserDefinedInfoCount" resultType="int">
+		SELECT COUNT(*)
+			FROM (SELECT *
+			FROM
+		<if test="timeType == 'month'">
+			T_HEALTH_INFO_MONTH T
+		</if>
+		<if test="timeType == 'day'">
+			T_HEALTH_INFO_DAY T
+		</if>
+		WHERE
+			T.HEALTHTYPE = #{healthType} 
+			AND T.HEALTHID = #{kpiId}
+ 	 		AND T.COLLECTTIME &gt;= #{starttime} 
+ 	 		AND T.COLLECTTIME &lt;=#{endtime}
+		GROUP BY T.COLLECTTIME)
+	</select> 
+	
+</mapper>

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.keyIndexSurvey.dao.mapper.KeyIndexSurveyMapper">
+	
+	<!-- 根据时间查询流量本网率 -->
+	<resultMap type="java.util.HashMap" id="flowNetRate">
+		<result property="label" column="TIME_ID"/>
+		<result property="sj" column="SJ"/>
+		<result property="tt" column="TT"/>
+		<result property="lt" column="LT"/>
+		<result property="dx" column="DX"/>
+		<result property="gw_gat" column="GW_GAT"/>
+		<result property="qt" column="QT"/>
+		<result property="down_sum" column="DOWN_SUM"/>
+		<result property="value" column="BW_PERCENT"/>
+	</resultMap>
+	<select id="findFlowNetRate" resultMap="flowNetRate">
+		<![CDATA[
+			 SELECT 
+			      T.TIME_ID TIME_ID,
+			      T.SJ SJ,
+			      T.TT TT,
+			      T.LT LT,
+			      T.DX DX,
+			      T.GW_GAT GW_GAT,
+			      T.QT QT,
+			      T.DOWN_SUM DOWN_SUM,
+			      T.BW_PERCENT BW_PERCENT
+			
+			    FROM 
+			      T_KPIMONITOR_FLOWNETRATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+			     ORDER BY T.TIME_ID ASC
+		]]>
+	</select>
+	<!-- 根据时间查询流量本网率明细列表 -->
+	<resultMap type="java.util.HashMap" id="flowNetRateTable">
+		<result property="time_id" column="TIME_ID"/>
+		<result property="sj" column="SJ"/>
+		<result property="tt" column="TT"/>
+		<result property="lt" column="LT"/>
+		<result property="dx" column="DX"/>
+		<result property="gw_gat" column="GW_GAT"/>
+		<result property="qt" column="QT"/>
+		<result property="down_sum" column="DOWN_SUM"/>
+		<result property="bw_percent" column="BW_PERCENT"/>
+	</resultMap>
+	<select id="findFlowNetRateTable" resultMap="flowNetRateTable">
+		<![CDATA[
+			SELECT
+				   *
+		       FROM
+			  (SELECT
+				   ROWNUM "NUMBER",
+		           S.*
+		       FROM
+		           (SELECT 
+                      
+                      T.TIME_ID TIME_ID,
+				      T.SJ SJ,
+				      T.TT TT,
+				      T.LT LT,
+				      T.DX DX,
+				      T.GW_GAT GW_GAT,
+				      T.QT QT,
+				      T.DOWN_SUM DOWN_SUM,
+				      T.BW_PERCENT BW_PERCENT 
+				
+				    FROM 
+				      T_KPIMONITOR_FLOWNETRATE T
+				    WHERE 
+				      T.TIME_ID >= #{0}
+				     AND
+				      T.TIME_ID < #{1}
+				    ORDER BY T.TIME_ID ASC
+	              )S) Q
+	         WHERE 
+	           	   Q."NUMBER" > (#{2} - 1) * #{3}
+		       AND
+		           Q."NUMBER" <= #{2} * #{3}
+		       
+		]]>
+	</select>
+	<!-- 根据时间查询流量本网率明细列表记录数 -->
+	<select id="findFlowNetRateTableCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			      COUNT(T.TIME_ID)
+			
+			    FROM 
+			      T_KPIMONITOR_FLOWNETRATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+		]]>
+		
+	</select>
+	<!-- 根据时间查询手机点击本网率 -->
+	<resultMap type="java.util.HashMap" id="phoneHiteRate">
+		<result property="label" column="TIME_ID"/>
+		<result property="sn" column="SN"/>
+		<result property="wn" column="WN"/>
+		<result property="tt" column="TT"/>
+		<result property="dx" column="DX"/>
+		<result property="lt" column="LT"/>
+		<result property="jy" column="JY"/>
+		<result property="click_num" column="CLICK_NUM"/>
+		<result property="value" column="CLICK_PERCENT"/>
+	</resultMap>
+	<select id="findPhoneHiteRate" resultMap="phoneHiteRate">
+		<![CDATA[
+			SELECT 
+			      T.TIME_ID TIME_ID,
+			      T.SN SN,
+			      T.WN WN,
+			      T.TT TT,
+			      T.DX DX,
+			      T.LT LT,
+			      T.JY JY,
+			      T.CLICK_NUM CLICK_NUM,
+			      T.CLICK_PERCENT CLICK_PERCENT
+			    FROM 
+			      T_KPIMONITOR_PHONEHITERATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+			     AND
+				  to_number(to_char(T.TIME_ID,'D')) = 5
+			    ORDER BY T.TIME_ID ASC
+		]]>
+		
+	</select>
+	<!-- 根据时间查询手机点击本网率明细列表 -->
+	<resultMap type="java.util.HashMap" id="phoneHiteRateTable">
+		<result property="time_id" column="TIME_ID"/>
+		<result property="sn" column="SN"/>
+		<result property="wn" column="WN"/>
+		<result property="tt" column="TT"/>
+		<result property="dx" column="DX"/>
+		<result property="lt" column="LT"/>
+		<result property="jy" column="JY"/>
+		<result property="click_num" column="CLICK_NUM"/>
+		<result property="click_percent" column="CLICK_PERCENT"/>
+	</resultMap>
+	<select id="findPhoneHiteRateTable" resultMap="phoneHiteRateTable">
+		<![CDATA[
+			SELECT
+		           Q.*
+		       FROM
+		           (SELECT 
+	                      ROWNUM "NUMBER",
+	                      T.TIME_ID TIME_ID,
+					      T.SN SN,
+					      T.WN WN,
+					      T.TT TT,
+					      T.DX DX,
+					      T.LT LT,
+					      T.JY JY,
+					      T.CLICK_NUM CLICK_NUM,
+					      T.CLICK_PERCENT CLICK_PERCENT
+				    FROM 
+				      	T_KPIMONITOR_PHONEHITERATE T
+				    WHERE 
+				      	T.TIME_ID >= #{0}
+					   AND
+					    T.TIME_ID < #{1}
+					   AND
+					    to_number(to_char(T.TIME_ID,'D')) = 5
+					  ORDER BY T.TIME_ID ASC
+	              ) Q
+	         WHERE 
+	           	   Q."NUMBER" > (#{2} - 1) * #{3}
+		       AND
+		           Q."NUMBER" <= #{2} * #{3}
+		]]>
+		
+	</select>
+	<!-- 根据时间查询手机点击本网率明细列表记录数 -->
+	<select id="findPhoneHiteRateTableCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			      COUNT(T.TIME_ID)
+			
+			    FROM 
+			      T_KPIMONITOR_PHONEHITERATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+			     AND
+				  to_number(to_char(T.TIME_ID,'D')) = 5
+		]]>
+		
+	</select>
+	<!-- 根据时间查询本省内容满足率 -->
+	<resultMap type="java.util.HashMap" id="contentmeetRate">
+		<result property="label" column="TIME_ID"/>
+		<result property="content_rate1" column="CONTENT_RATE1"/>
+		<result property="content_rate2" column="CONTENT_RATE2"/>
+		<result property="trunk_link" column="TRUNK_LINK"/>
+		<result property="service_province" column="SERVICE_PROVINCE"/>
+		<result property="web_cache" column="WEB_CACHE"/>
+		<result property="p2p_cache" column="P2P_CACHE"/>
+		<result property="tietong" column="TIETONG"/>
+	</resultMap>
+	<select id="findContentmeetRate" resultMap="contentmeetRate">
+		<![CDATA[
+			SELECT 
+			      T.TIME_ID TIME_ID,
+			      T.CONTENT_RATE1 CONTENT_RATE1,
+			      T.CONTENT_RATE2 CONTENT_RATE2,
+			      T.TRUNK_LINK TRUNK_LINK,
+			      T.SERVICE_PROVINCE SERVICE_PROVINCE,
+			      T.WEB_CACHE WEB_CACHE,
+			      T.P2P_CACHE P2P_CACHE,
+			      T.TIETONG TIETONG
+			    FROM
+			      T_KPIMONITOR_CONTENTMEETRATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+			    ORDER BY T.TIME_ID ASC
+		]]>
+		
+	</select>
+	<!-- 根据时间查询本省内容满足率明细列表 -->
+	<resultMap type="java.util.HashMap" id="contentmeetRateTable">
+		<result property="time_id" column="TIME_ID"/>
+		<result property="content_rate1" column="CONTENT_RATE1"/>
+		<result property="content_rate2" column="CONTENT_RATE2"/>
+		<result property="trunk_link" column="TRUNK_LINK"/>
+		<result property="service_province" column="SERVICE_PROVINCE"/>
+		<result property="web_cache" column="WEB_CACHE"/>
+		<result property="p2p_cache" column="P2P_CACHE"/>
+		<result property="tietong" column="TIETONG"/>
+	</resultMap>
+	<select id="findContentmeetRateTable" resultMap="contentmeetRateTable">
+		<![CDATA[
+		SELECT
+			*
+		FROM
+			(SELECT
+				   ROWNUM "NUMBER",
+		           S.*
+		       FROM
+		           (SELECT 
+	                      
+	                      T.TIME_ID TIME_ID,
+	                      T.CONTENT_RATE1 CONTENT_RATE1,
+			      		  T.CONTENT_RATE2 CONTENT_RATE2,
+					      T.TRUNK_LINK TRUNK_LINK,
+					      T.SERVICE_PROVINCE SERVICE_PROVINCE,
+					      T.WEB_CACHE WEB_CACHE,
+					      T.P2P_CACHE P2P_CACHE,
+					      T.TIETONG TIETONG
+					    FROM
+					      T_KPIMONITOR_CONTENTMEETRATE T
+					    WHERE 
+					      T.TIME_ID >= #{0}
+					     AND
+					      T.TIME_ID < #{1}
+					    ORDER BY T.TIME_ID ASC
+	              ) S)Q
+	         WHERE 
+	           	   Q."NUMBER" > (#{2} - 1) * #{3}
+		       AND
+		           Q."NUMBER" <= #{2} * #{3}
+		]]>
+		
+	</select>
+	<!-- 根据时间查询本省内容满足率明细列表记录数 -->
+	<select id="findContentmeetRateTableCount" resultType="int">
+		<![CDATA[
+			SELECT 
+			      COUNT(T.TIME_ID)
+			
+			    FROM 
+			      T_KPIMONITOR_CONTENTMEETRATE T
+			    WHERE 
+			      T.TIME_ID >= #{0}
+			     AND
+			      T.TIME_ID < #{1}
+		]]>
+		
+	</select>
+		
+	
+</mapper>
+

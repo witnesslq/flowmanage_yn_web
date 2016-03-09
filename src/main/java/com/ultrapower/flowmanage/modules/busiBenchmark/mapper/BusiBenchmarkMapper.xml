@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ultrapower.flowmanage.modules.busiBenchmark.dao.mapper.BusiBenchmarkMapper">
+	<!-- 根据业务类型查询字典表信息 -->
+	<select id="findBusinessInfoByType" resultType="java.util.HashMap">
+		<![CDATA[
+			SELECT * FROM T_DIC WHERE OBJECTTYPE = #{0} AND PARENNTID = #{1}
+		]]>
+	</select>
+	
+	<!-- 
+		根据业务ID和时间查询关注网站
+		重点关注网站:两个及两个以上指标越线的网站
+		需关注网站:一个指标越线的网站
+	 -->
+	<resultMap type="java.util.HashMap" id="emphasisNeedConcernWebInfo">
+		<result property="webName" column="WEBNAME"/>
+	</resultMap>
+	<select id="findEmphasisNeedConcernWebInfo" resultMap="emphasisNeedConcernWebInfo">
+			 SELECT 
+		          T.WEBNAME,
+		          COUNT(T.KPINAME) KPINAMECOUNT 
+		      FROM 
+		          T_BUSIBENCHMARK_INFO T 
+		     WHERE 
+		          T.BUSIID = #{busiId} 
+		       AND 
+		          T.COLLECTTIME &gt;= #{getDay} 
+		       AND
+		       	  T.COLLECTTIME &lt; #{nextDay}
+		       <!-- 单日波动 -->
+		       <if test="timeType == 'day'">
+		       AND (t.dayavg &gt;= t.dayavgforward30 OR t.dayavg &lt;= t.dayavgback30)
+		       </if>
+		       <!-- 7天波动 -->
+		       <if test="timeType == 'week'">
+		       AND (t.dayavg &gt;= t.weekavgforward30 OR t.dayavg &lt;= t.weekavgback30)
+		       </if>
+		       <!-- 30天波动 -->
+		       <if test="timeType == 'month'">
+		       AND (t.dayavg &gt;= t.monthavgforward30 OR t.dayavg &lt;= t.monthavgback30)
+		       </if>
+		  GROUP BY T.WEBNAME 
+		    <!-- 重点关注网站(两个及两个以上指标越线的网站) -->
+		    <if test="overLineWebType == 1">
+		    HAVING COUNT(T.KPINAME) &gt;= 2
+		    </if>
+			<!-- 需关注网站(一个指标越线的网站) -->
+			<if test="overLineWebType == 2">
+       		HAVING COUNT(T.KPINAME) = 1
+       		</if>
+	</select>
+	
+	<!-- 查询业务基准线阀值 -->
+	<resultMap type="java.util.HashMap" id="busiBenchmarkThreshold">
+		<result property="kpiId" column="KPIID" />
+		<result property="kpiName" column="KPINAME" />
+		<result property="maxValue" column="UP_THRESHOLD_VALUE" />
+		<result property="minValue" column="DOWN_THRESHOLD_VALUE" />
+		<result property="unit" column="UNIT" />
+	</resultMap>
+	<select id="findBusiBenchmarkThreshold" resultMap="busiBenchmarkThreshold">
+		<![CDATA[
+			SELECT 
+			      T.KPIID,
+			      T.KPINAME,
+			      T.UP_THRESHOLD_VALUE,
+      			  T.DOWN_THRESHOLD_VALUE,
+      			  (SELECT D.UNIT FROM T_DIC D WHERE D.OBJECTID = T.KPIID AND OBJECTTYPE = 'BUSI_BENCHMARK_LINE_KPI') UNIT
+			 FROM 
+			      T_BUSIBENCHMARK_THRESHOLD T
+			 WHERE
+      			  T.BUSIID = #{0}
+		]]>
+	</select>
+	
+	<!-- 根据业务ID、网站名称、时间查询30天网站各指标波动情况 -->
+	<select id="findWebKpifloatDay30" resultType="java.util.HashMap">
+		  SELECT 
+                T.WEBNAME,
+	            T.KPIID,
+	            T.KPINAME,
+	            T.DAYAVGFORWARD30,
+	            T.DAYAVGBACK30,
+	            T.DAYAVG,
+	            T.WEEKAVGFORWARD30,
+	            T.WEEKAVGBACK30,
+	            T.MONTHAVGFORWARD30,
+	            T.MONTHAVGBACK30,
+	            TO_CHAR(T.COLLECTTIME,'MM/DD') COLLECTTIME
+	        FROM 
+	            T_BUSIBENCHMARK_INFO T 
+	       WHERE 
+	            T.BUSIID = #{busiId} 
+	         AND
+	            T.WEBNAME = #{webName}
+	         AND 
+	            T.COLLECTTIME &lt;= #{getDay}
+	         AND
+	            T.COLLECTTIME > #{beforeDay}
+	    ORDER BY T.KPINAME,T.COLLECTTIME
+	</select>
+	
+	<!-- 根据业务ID、指标名称、时间、浮动时间粒度(单日、7天、30天浮动)查询需关注网站各项指标的正向、逆向越线TOP3网站 -->
+	<select id="findNeedfocusWebKpiPasslineTOP3" resultType="java.util.HashMap">
+             SELECT 
+                   *
+               FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'TRUE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &gt;= T.DAYAVGFORWARD30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &gt;= T.WEEKAVGFORWARD30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &gt;= T.MONTHAVGFORWARD30
+                         </if>
+                         <if test="busiId == '1015'">
+                         AND T.KPINAME = '吞吐率'
+                         </if>
+                         <if test="busiId == '1016'">
+                         AND T.KPINAME = '平均缓冲比'
+                         </if>
+                         <if test="busiId == '1017'">
+                         AND T.KPINAME = '流速'
+                         </if>
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL
+               SELECT 
+                   *
+               FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'FALSE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &lt;= T.DAYAVGBACK30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &lt;= T.WEEKAVGBACK30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &lt;= T.MONTHAVGBACK30
+                         </if>
+                         <if test="busiId == '1015'">
+                         AND T.KPINAME = '吞吐率'
+                         </if>
+                         <if test="busiId == '1016'">
+                         AND T.KPINAME = '平均缓冲比'
+                         </if>
+                         <if test="busiId == '1017'">
+                         AND T.KPINAME = '流速'
+                         </if>
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL      
+              SELECT 
+                    *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'TRUE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &gt;= T.DAYAVGFORWARD30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &gt;= T.WEEKAVGFORWARD30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &gt;= T.MONTHAVGFORWARD30
+                         </if>
+                         <if test="busiId == '1015'">
+                         AND T.KPINAME = '总时间'
+                         </if>
+                         <if test="busiId == '1016'">
+                         AND T.KPINAME = '吞吐率'
+                         </if>
+                         <if test="busiId == '1017'">
+                         AND T.KPINAME = '流速'
+                         </if>
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL
+               SELECT 
+                     *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'FALSE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &lt;= T.DAYAVGBACK30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &lt;= T.WEEKAVGBACK30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &lt;= T.MONTHAVGBACK30
+                         </if>
+                         <if test="busiId == '1015'">
+                         AND T.KPINAME = '总时间'
+                         </if>
+                         <if test="busiId == '1016'">
+                         AND T.KPINAME = '吞吐率'
+                         </if>
+                         <if test="busiId == '1017'">
+                         AND T.KPINAME = '流速'
+                         </if>
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL      
+              SELECT 
+                    *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'TRUE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &gt;= T.DAYAVGFORWARD30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &gt;= T.WEEKAVGFORWARD30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &gt;= T.MONTHAVGFORWARD30
+                         </if>
+                         AND 
+                            T.KPINAME = '连接时间'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL
+               SELECT 
+                     *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'FALSE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &lt;= T.DAYAVGBACK30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &lt;= T.WEEKAVGBACK30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &lt;= T.MONTHAVGBACK30
+                         </if>
+                         AND 
+                            T.KPINAME = '连接时间'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+          UNION ALL      
+              SELECT 
+                    *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'TRUE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &gt;= T.DAYAVGFORWARD30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &gt;= T.WEEKAVGFORWARD30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &gt;= T.MONTHAVGFORWARD30
+                         </if>
+                         AND 
+                            T.KPINAME = '解析时间'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL
+               SELECT 
+                     *
+                FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'FALSE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &lt;= T.DAYAVGBACK30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &lt;= T.WEEKAVGBACK30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &lt;= T.MONTHAVGBACK30
+                         </if>
+                         AND 
+                            T.KPINAME = '解析时间'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+          UNION ALL     
+              SELECT 
+                   *
+               FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'TRUE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &gt;= T.DAYAVGFORWARD30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &gt;= T.WEEKAVGFORWARD30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &gt;= T.MONTHAVGFORWARD30
+                         </if>
+                         AND 
+                            T.KPINAME = '成功率'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+         UNION ALL
+               SELECT 
+                   *
+               FROM(
+                    SELECT 
+                            T.KPINAME,
+                            T.WEBNAME,
+                            'FALSE' FLAG,
+                            T.DAYAVG
+                        FROM 
+                            T_BUSIBENCHMARK_INFO T 
+                       WHERE 
+                            T.BUSIID = #{busiId} 
+                         AND 
+                            T.COLLECTTIME &gt;= #{getDay} 
+				         AND
+				       	    T.COLLECTTIME &lt; #{nextDay}
+                         <!-- 单日波动 -->
+                         <if test="timeType == 'day'">
+                         AND T.DAYAVG &lt;= T.DAYAVGBACK30
+                         </if>
+                         <!-- 7天波动 -->
+                         <if test="timeType == 'week'">
+                         AND T.DAYAVG &lt;= T.WEEKAVGBACK30
+                         </if>
+                         <!-- 30天波动 -->
+                         <if test="timeType == 'month'">
+                         AND T.DAYAVG &lt;= T.MONTHAVGBACK30
+                         </if>
+                         AND 
+                            T.KPINAME = '成功率'
+                         ORDER BY T.DAYAVG DESC
+                     )
+                WHERE ROWNUM &lt;= 3
+	</select>
+</mapper>
+

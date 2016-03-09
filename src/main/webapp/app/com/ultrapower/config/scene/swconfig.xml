@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<configuration>
+	<scene title="三网协同分析">
+		<page label="流量地图(基础场景)"  url="pages/scene.swf" state="splashpage"/>
+	    <page label="高流量(栅格场景)"  url="pages/welcome.swf"/>
+	    <page label="2G/3G协同场景"  url="pages/scene.swf"/>
+	    <page label="流量经营战略地图"  url="pages/welcome.swf"/>
+	</scene>
+</configuration>
